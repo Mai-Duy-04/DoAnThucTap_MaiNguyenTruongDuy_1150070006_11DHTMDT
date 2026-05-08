@@ -1,4 +1,4 @@
-@{
+﻿@{
     Layout = null;
 }
 
@@ -44,6 +44,11 @@
                     <i class="fa-solid fa-tags me-2"></i> Loại tour
                 </a>
             </li>
+            <li>
+                <a href="/PhieuGiamGia/Index">
+                    <i class="fa-solid fa-ticket me-2"></i> Phiếu giảm giá
+                </a>
+            </li>
             <li><a href="/QuanTri/QuanLyTour"><i class="fa-solid fa-map-location-dot me-2"></i> Quản lý tour</a></li>
             <li>
                 <a href="/QuanTri/DanhSachLich">
@@ -85,7 +90,11 @@
 </div>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/admin.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
 </body>
 
 
 </html>
+
+
+

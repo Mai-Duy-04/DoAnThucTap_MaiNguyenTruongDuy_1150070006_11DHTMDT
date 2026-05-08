@@ -1,0 +1,18 @@
+@model TestimonialItem
+
+<article class="testimonial-card reveal">
+    <div class="testimonial-top">
+        <img src="@Model.AvatarUrl" alt="Khách hàng @Model.Name" loading="lazy" />
+        <div>
+            <h4>@Model.Name</h4>
+            <p>@Model.Title</p>
+        </div>
+    </div>
+    <div class="testimonial-rating" aria-label="@Model.Rating star rating">
+        @for (var i = 0; i < Model.Rating; i++)
+        {
+            <i class="fa-solid fa-star"></i>
+        }
+    </div>
+    <blockquote>@Model.Quote</blockquote>
+</article>

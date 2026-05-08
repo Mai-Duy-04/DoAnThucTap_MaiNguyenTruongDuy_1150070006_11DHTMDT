@@ -1,25 +1,76 @@
-@model List<TourWebApp.Data.Models.Tour>
+﻿@model List<TourWebApp.Data.Models.Tour>
 
 @{
     ViewData["Title"] = "Tất cả tour";
     var lichGanNhat = ViewBag.LichGanNhat as Dictionary<int, TourWebApp.Data.Models.LichKhoiHanh>;
+    var loaiTours = ViewBag.LoaiTours as List<TourWebApp.Data.Models.LoaiTour> ?? new List<TourWebApp.Data.Models.LoaiTour>();
+    var phuongTienList = ViewBag.PhuongTienList as List<string> ?? new List<string>();
+    var q = Context.Request.Query;
+    bool chiConCho = q["concho"] == "true" || q["concho"] == "on";
+    var wishlistIds = ViewBag.WishlistIds as HashSet<int> ?? new HashSet<int>();
+    var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
 }
 <link rel="stylesheet" href="~/css/tour-filter.css" />
 
-<div class="text-end mb-3">
-    <button type="button" class="btn btn-outline-primary fw-bold rounded-pill"
-            data-bs-toggle="modal" data-bs-target="#filterModal">
-        🔍 Bộ lọc
-    </button>
-</div>
+<div class="tours-container">
+<section class="tour-listing-page planner-filter-wrap mb-4">
+    <div class="tour-filter-head">
+        <p class="tour-filter-kicker">Khám phá hành trình</p>
+        <h1 class="tour-filter-title">Chọn tour phù hợp ngân sách và lịch trình của bạn</h1>
+    </div>
+    <form method="get" id="quickFilterForm" class="planner-card planner-card-tour">
+        <div class="planner-field planner-field-wide planner-field-relative">
+            <label for="diadiemInputTop">Điểm đến</label>
+            <input type="text" name="diadiem" id="diadiemInputTop" placeholder="VD: Đà Lạt, Nha Trang..." value="@q["diadiem"]" autocomplete="off" />
+            <div class="autocomplete-box" id="goiYBoxTop"></div>
+        </div>
+        <div class="planner-field">
+            <label for="ngaydiTop">Ngày đi</label>
+            <input type="date" id="ngaydiTop" name="ngaydi" value="@q["ngaydi"]" />
+        </div>
+        <div class="planner-field">
+            <label for="songayTop">Số ngày</label>
+            <input type="number" id="songayTop" name="songay" min="1" placeholder="VD: 3" value="@q["songay"]" />
+        </div>
+        <div class="planner-field">
+            <label for="phuongTienTop">Phương tiện</label>
+            <select id="phuongTienTop" name="phuongtien">
+                <option value="">Tất cả</option>
+                @foreach (var pt in phuongTienList)
+                {
+                    <option value="@pt" selected="@(q["phuongtien"] == pt)">@pt</option>
+                }
+            </select>
+        </div>
+        <div class="planner-field">
+            <label for="idLoaiTourTop">Loại tour</label>
+            <select id="idLoaiTourTop" name="idLoaiTour">
+                <option value="">Tất cả</option>
+                @foreach (var lt in loaiTours)
+                {
+                    <option value="@lt.IdLoaiTour" selected="@(q["idLoaiTour"] == lt.IdLoaiTour.ToString())">@lt.TenLoai</option>
+                }
+            </select>
+        </div>
+        <div class="planner-field planner-field-action">
+            <label class="planner-check-wrap" for="conChoCheckTop">
+                <input type="checkbox" id="conChoCheckTop" name="concho" value="true" checked="@chiConCho" />
+                <span>Chỉ còn tour còn chỗ</span>
+            </label>
+            <button class="planner-submit" type="submit">Tìm tour</button>
+            <button type="button" class="planner-advanced" data-bs-toggle="modal" data-bs-target="#filterModal">Nâng cao</button>
+        </div>
+    </form>
+</section>
 
-<h2 class="title-all-tour text-center">Tất cả tour</h2>
-
-
-
+<h2 class="title-all-tour">Tất cả tour</h2>
 
 <!-- =================== LIST TOUR =================== -->
-<div class="row g-4">
+<section class="tours-showcase">
+<div class="row g-4 tour-listing-grid">
+@{
+    var tourIndex = 0;
+}
 
 @foreach (var t in Model)
 {
@@ -41,11 +92,10 @@
         trangThai = lich.SoChoConLai <= 0 ? "Hết chỗ" : "Còn chỗ";
     }
 
-    <div class="col-lg-3 col-md-6">
+    <div class="col-xl-3 col-lg-4 col-md-6 d-flex reveal" style="--stagger:@(tourIndex % 8)">
 
-        <div class="tour-card-modern shadow-lg rounded-4 overflow-hidden">
+        <article class="tour-card-modern tour-list-card shadow-lg rounded-4 overflow-hidden h-100 w-100 d-flex flex-column">
 
-            <!-- BADGE GIẢM GIÁ -->
             @if (t.PhanTramGiam > 0)
             {
                 <div class="position-absolute top-0 end-0 m-3 px-3 py-2 bg-warning rounded-pill text-white fw-bold">
@@ -53,63 +103,84 @@
                 </div>
             }
 
-            <!-- IMAGE -->
-            <div class="position-relative" style="height:240px; overflow:hidden;">
+            <div class="position-relative tour-list-image-wrap" style="height:165px; overflow:hidden;">
+                <form asp-controller="Wishlist"
+                      asp-action="Toggle"
+                      method="post"
+                      class="position-absolute top-0 start-0 m-2"
+                      style="z-index: 3;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="idTour" value="@t.IdTour" />
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    <button type="submit"
+                            class="btn btn-sm rounded-circle @(wishlistIds.Contains(t.IdTour) ? "btn-danger" : "btn-light")"
+                            title="@(wishlistIds.Contains(t.IdTour) ? "Bỏ khỏi yêu thích" : "Thêm vào yêu thích")"
+                            aria-label="@(wishlistIds.Contains(t.IdTour) ? "Bỏ khỏi yêu thích" : "Thêm vào yêu thích")">
+                        <i class="fa@(wishlistIds.Contains(t.IdTour) ? "s" : "r") fa-heart"></i>
+                    </button>
+                </form>
+
                 <img src="~/img/tours/@t.HinhAnh"
-                     class="w-100 h-100"
+                     class="w-100 h-100 tour-list-image"
                      style="object-fit:cover; border-radius:10px;" />
             </div>
 
-            <!-- INFO OVERLAY (PHẦN CON MUỐN) -->
-            <div class="bg-light p-3 border-bottom">
+            <div class="bg-light p-3 border-bottom tour-list-meta">
 
                 <p class="mb-1"><b>Mã tour:</b> @t.MaTour</p>
                 <p class="mb-1"><b>Điểm đến:</b> @t.DiaDiem</p>
 
-                <p class="mb-1"><b>Ngày gần nhất:</b> @ngay</p>
-                <p class="mb-1"><b>Giờ khởi hành:</b> @gio</p>
-                <p class="mb-1"><b>Còn lại:</b> @socho chỗ</p>
-                <p class="mb-1"><b>Trạng thái:</b> @trangThai</p>
+                @if (lich != null)
+                {
+                    <p class="mb-1"><b>Ngày gần nhất:</b> @ngay</p>
+                    <p class="mb-1"><b>Giờ khởi hành:</b> @gio</p>
+                    <p class="mb-1"><b>Còn lại:</b> @socho chỗ</p>
+                    <p class="mb-1"><b>Trạng thái:</b> @trangThai</p>
+                }
+                else
+                {
+                    <p class="mb-1 text-muted"><b>Lịch:</b> Chưa cập nhật lịch khởi hành</p>
+                }
 
                 <p class="mb-0"><b>Phương tiện:</b> @t.PhuongTien</p>
             </div>
 
-            <!-- BODY -->
-            <div class="p-3">
+            <div class="p-3 d-flex flex-column gap-2 flex-grow-1 tour-list-body">
 
-                <h4 class="fw-bold">@t.TenTour</h4>
+                <p class="tour-list-tag">Việt Nam</p>
 
-                <div class="text-secondary mb-2">
-                    @t.ThoiGian
+                <h4 class="fw-bold tour-list-title">@t.TenTour</h4>
+
+                <p class="tour-list-desc">@t.MoTa</p>
+
+                <div class="tour-list-footer d-flex align-items-center justify-content-between mt-auto">
+                    <p class="tour-price mb-0">Từ <strong>@string.Format("{0:N0}đ", t.GiaKhuyenMai)</strong></p>
+                    <a asp-controller="Tour"
+                       asp-action="ChiTiet"
+                       asp-route-id="@t.IdTour"
+                       class="tour-link-detail">
+                        Xem chi tiết
+                    </a>
                 </div>
-
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    <span class="fw-bold text-danger fs-4">@string.Format("{0:N0} đ", t.GiaKhuyenMai)</span>
-                    <span class="text-decoration-line-through text-muted">@string.Format("{0:N0} đ", t.GiaGoc)</span>
-                </div>
-
-                <a asp-controller="Tour"
-                   asp-action="ChiTiet"
-                   asp-route-id="@t.IdTour"
-                   class="btn btn-primary w-100 fw-bold rounded-pill">
-                    Xem chi tiết
-                </a>
 
             </div>
 
-        </div>
+        </article>
 
     </div>
+    tourIndex++;
 }
 
 </div>
+</section>
+
 <!-- ================= MODAL FILTER ================= -->
 <div class="modal fade" id="filterModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content rounded-4">
 
             <div class="modal-header">
-                <h5 class="modal-title fw-bold">🔍 Bộ lọc nâng cao</h5>
+                <h5 class="modal-title fw-bold">Bộ lọc nâng cao</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
@@ -118,30 +189,60 @@
 
                     <div class="row g-3">
 
-                        <!-- ĐIỂM ĐẾN -->
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold">Điểm đến</label>
-
                             <input type="text" name="diadiem" id="diadiemInput"
-                                class="form-control"
-                                placeholder="VD: Đà Lạt, Nha Trang..."
-                                autocomplete="off"
-                                value="@Context.Request.Query["diadiem"]">
-
+                                   class="form-control"
+                                   placeholder="VD: Đà Lạt, Nha Trang..."
+                                   autocomplete="off"
+                                   value="@q["diadiem"]">
                             <div class="autocomplete-box" id="goiYBox"></div>
                         </div>
 
-                        <!-- SỐ NGÀY -->
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Ngày đi</label>
+                            <input type="date" name="ngaydi" class="form-control" value="@q["ngaydi"]" />
+                        </div>
+
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold">Số ngày</label>
                             <input type="number" name="songay"
                                    class="form-control"
                                    placeholder="VD: 3"
-                                   value="@Context.Request.Query["songay"]"/>
+                                   min="1"
+                                   value="@q["songay"]" />
                         </div>
 
-                       
-                       <div class="col-12 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Phương tiện</label>
+                            <select name="phuongtien" class="form-select">
+                                <option value="">-- Tất cả --</option>
+                                @foreach (var pt in phuongTienList)
+                                {
+                                    <option value="@pt" selected="@(q["phuongtien"] == pt)">@pt</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Loại tour</label>
+                            <select name="idLoaiTour" class="form-select">
+                                <option value="">-- Tất cả --</option>
+                                @foreach (var lt in loaiTours)
+                                {
+                                    <option value="@lt.IdLoaiTour" selected="@(q["idLoaiTour"] == lt.IdLoaiTour.ToString())">@lt.TenLoai</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check mt-1">
+                                <input class="form-check-input" type="checkbox" id="conChoCheck" name="concho" value="true" checked="@chiConCho" />
+                                <label class="form-check-label" for="conChoCheck">Chỉ hiện tour còn chỗ</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-2">
                             <label class="form-label fw-semibold">Khoảng giá</label>
 
                             <div class="price-slider-container">
@@ -155,27 +256,28 @@
                                 <div>
                                     <span class="fw-bold">Từ:</span>
                                     <input type="text" name="giamin" id="giaminInput"
-                                        class="form-control money-input"
-                                        style="width:150px;">
+                                           class="form-control money-input"
+                                           style="width:150px;"
+                                           value="@q["giamin"]">
                                 </div>
 
                                 <div>
                                     <span class="fw-bold">Đến:</span>
                                     <input type="text" name="giamax" id="giamaxInput"
-                                        class="form-control money-input"
-                                        style="width:150px;">
+                                           class="form-control money-input"
+                                           style="width:150px;"
+                                           value="@q["giamax"]">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- SORT -->
                         <div class="col-12 mt-3">
                             <label class="form-label fw-semibold">Sắp xếp</label>
                             <select name="sort" class="form-select">
                                 <option value="">-- Không sắp xếp --</option>
-                                <option value="gia_tang" selected="@(Context.Request.Query["sort"]=="gia_tang")">Giá tăng dần</option>
-                                <option value="gia_giam" selected="@(Context.Request.Query["sort"]=="gia_giam")">Giá giảm dần</option>
-                                <option value="ten" selected="@(Context.Request.Query["sort"]=="ten")">Tên A → Z</option>
+                                <option value="gia_tang" selected="@(q["sort"]=="gia_tang")">Giá tăng dần</option>
+                                <option value="gia_giam" selected="@(q["sort"]=="gia_giam")">Giá giảm dần</option>
+                                <option value="ten" selected="@(q["sort"]=="ten")">Tên A -> Z</option>
                             </select>
                         </div>
 
@@ -199,15 +301,15 @@
         @if (ViewBag.CurrentPage > 1)
         {
             <a class="btn btn-outline-primary rounded-pill"
-               href="?page=@(ViewBag.CurrentPage - 1)&diadiem=@Context.Request.Query["diadiem"]&songay=@Context.Request.Query["songay"]&giamin=@Context.Request.Query["giamin"]&giamax=@Context.Request.Query["giamax"]&sort=@Context.Request.Query["sort"]">
-                ←
+               href="?page=@(ViewBag.CurrentPage - 1)&diadiem=@q["diadiem"]&ngaydi=@q["ngaydi"]&songay=@q["songay"]&giamin=@q["giamin"]&giamax=@q["giamax"]&phuongtien=@q["phuongtien"]&idLoaiTour=@q["idLoaiTour"]&concho=@q["concho"]&sort=@q["sort"]">
+                &larr;
             </a>
         }
 
         @for (int i = 1; i <= ViewBag.TotalPages; i++)
         {
             <a class="btn @(i == ViewBag.CurrentPage ? "btn-primary" : "btn-outline-primary") rounded-pill"
-               href="?page=@i&diadiem=@Context.Request.Query["diadiem"]&songay=@Context.Request.Query["songay"]&giamin=@Context.Request.Query["giamin"]&giamax=@Context.Request.Query["giamax"]&sort=@Context.Request.Query["sort"]">
+               href="?page=@i&diadiem=@q["diadiem"]&ngaydi=@q["ngaydi"]&songay=@q["songay"]&giamin=@q["giamin"]&giamax=@q["giamax"]&phuongtien=@q["phuongtien"]&idLoaiTour=@q["idLoaiTour"]&concho=@q["concho"]&sort=@q["sort"]">
                 @i
             </a>
         }
@@ -215,11 +317,12 @@
         @if (ViewBag.CurrentPage < ViewBag.TotalPages)
         {
             <a class="btn btn-outline-primary rounded-pill"
-               href="?page=@(ViewBag.CurrentPage + 1)&diadiem=@Context.Request.Query["diadiem"]&songay=@Context.Request.Query["songay"]&giamin=@Context.Request.Query["giamin"]&giamax=@Context.Request.Query["giamax"]&sort=@Context.Request.Query["sort"]">
-                →
+               href="?page=@(ViewBag.CurrentPage + 1)&diadiem=@q["diadiem"]&ngaydi=@q["ngaydi"]&songay=@q["songay"]&giamin=@q["giamin"]&giamax=@q["giamax"]&phuongtien=@q["phuongtien"]&idLoaiTour=@q["idLoaiTour"]&concho=@q["concho"]&sort=@q["sort"]">
+                &rarr;
             </a>
         }
 
     </div>
 }
 <script src="~/js/filter-slider.js"></script>
+</div>

@@ -20,6 +20,9 @@
     else
     {
         <div class="row g-4">
+        @{
+            var tourIndex = 0;
+        }
 
         @foreach (var t in Model)
         {
@@ -40,9 +43,9 @@
                 trangThai = lich.SoChoConLai <= 0 ? "Hết chỗ" : "Còn chỗ";
             }
 
-            <div class="col-md-4">
+            <div class="col-md-4 d-flex reveal" style="--stagger:@(tourIndex % 8)">
 
-                <div class="tour-card-modern shadow-lg rounded-4 overflow-hidden">
+                <article class="tour-card-modern tour-list-card shadow-lg rounded-4 overflow-hidden h-100 w-100 d-flex flex-column">
 
                     <!-- BADGE GIẢM GIÁ -->
                     @if (t.PhanTramGiam > 0)
@@ -53,14 +56,14 @@
                     }
 
                     <!-- IMAGE -->
-                    <div class="position-relative" style="height:240px; overflow:hidden;">
+                    <div class="position-relative tour-list-image-wrap" style="height:240px; overflow:hidden;">
                         <img src="~/img/tours/@t.HinhAnh"
-                             class="w-100 h-100"
+                             class="w-100 h-100 tour-list-image"
                              style="object-fit:cover;" />
                     </div>
 
                     <!-- INFO OVERLAY TRỰC TIẾP -->
-                    <div class="bg-light p-3 border-bottom">
+                    <div class="bg-light p-3 border-bottom tour-list-meta">
 
                         <p class="mb-1"><b>Mã tour:</b> @t.MaTour</p>
                         <p class="mb-1"><b>Điểm đến:</b> @t.DiaDiem</p>
@@ -73,9 +76,9 @@
                     </div>
 
                     <!-- BODY -->
-                    <div class="p-3">
+                    <div class="p-3 d-flex flex-column gap-2 flex-grow-1">
 
-                        <h4 class="fw-bold">@t.TenTour</h4>
+                        <h4 class="fw-bold tour-list-title">@t.TenTour</h4>
 
                         <div class="text-secondary mb-2">
                             @t.ThoiGian
@@ -89,15 +92,16 @@
                         <a asp-controller="Tour"
                            asp-action="ChiTiet"
                            asp-route-id="@t.IdTour"
-                           class="btn btn-primary w-100 fw-bold rounded-pill">
+                           class="btn btn-primary w-100 fw-bold rounded-pill mt-auto">
                             Xem chi tiết
                         </a>
 
                     </div>
 
-                </div>
+                </article>
 
             </div>
+            tourIndex++;
         }
 
         </div>

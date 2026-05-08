@@ -2,6 +2,8 @@
     ViewData["Title"] = "Trang chủ";
 }
 
+<div class="happy-home-page">
+
 <!-- HERO SLIDER -->
 <div id="heroCarousel" class="carousel slide carousel-fade"
      data-bs-ride="carousel" data-bs-interval="3000">
@@ -41,13 +43,15 @@
     <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
         <span class="carousel-control-next-icon"></span>
     </button>
-</div>
 
-<!-- TEXT OVER SLIDER -->
-<div class="hero-text container reveal">
-    <h1>Khám phá Miền Nam</h1>
-    <p>Những hành trình đáng nhớ cùng HappyTrip – Tour du lịch uy tín, giá tốt.</p>
-    <a href="/Tour/TatCa" class="btn btn-cta">Xem Tour Ngay</a>
+    <!-- TEXT OVER SLIDER -->
+    <div class="hero-layer">
+        <div class="hero-text container hero-enter">
+            <h1>Khám phá Miền Nam</h1>
+            <p>Những hành trình đáng nhớ cùng HappyTrip – Tour du lịch uy tín, giá tốt.</p>
+            <a href="/Tour/TatCa" class="btn btn-cta">Xem Tour Ngay</a>
+        </div>
+    </div>
 </div>
 
 <!-- GIỚI THIỆU + ĐIỂM ĐẾN -->
@@ -101,7 +105,7 @@
 
 
 <!-- TOUR NỔI BẬT -->
-<section class="home-section bg-light">
+<section class="home-section home-highlight-section bg-light">
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="section-title mb-0">Tour nổi bật</h2>
@@ -110,46 +114,58 @@
             </a>
         </div>
 
-        <div class="row">
+        <div class="row g-4 tour-feature-grid">
+    @{
+        var featuredIndex = 0;
+    }
     @foreach (var tour in ViewBag.TourNoiBat)
     {
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm h-100">
+        <div class="col-lg-4 col-md-6 d-flex reveal" style="--stagger:@featuredIndex">
+            <article class="card home-tour-card border-0 shadow-sm flex-fill">
 
-                <img src="~/img/tours/@tour.HinhAnh"
-                     class="card-img-top"
-                     style="height:220px; object-fit:cover" />
+                <div class="home-tour-media">
+                    <img src="~/img/tours/@tour.HinhAnh"
+                         class="card-img-top home-tour-image"
+                         loading="lazy"
+                         alt="@tour.TenTour" />
+                </div>
 
-                <div class="card-body">
-                    <h5 class="fw-bold">@tour.TenTour</h5>
-                    <p class="text-muted">@tour.DiaDiem</p>
+                <div class="card-body home-tour-body d-flex flex-column">
+                    <h5 class="home-tour-title">@tour.TenTour</h5>
+                    <p class="home-tour-location">@tour.DiaDiem</p>
 
-                    <p>
+                    <p class="home-tour-price">
                         @if (tour.PhanTramGiam > 0)
                         {
-                            <span class="text-muted text-decoration-line-through">
+                            <span class="home-tour-price-old">
                                 @String.Format("{0:N0}đ", tour.GiaGoc)
                             </span>
                         }
-                        <span class="fw-bold text-danger ms-2">
+                        <span class="home-tour-price-new @(tour.PhanTramGiam > 0 ? "ms-2" : "")">
                             @String.Format("{0:N0}đ", tour.GiaKhuyenMai)
                         </span>
                     </p>
+                </div>
 
+                <div class="home-tour-action">
                     <a asp-controller="Tour"
                        asp-action="ChiTiet"
                        asp-route-id="@tour.IdTour"
-                       class="btn btn-primary w-100">
-                        Xem chi tiết
+                       class="home-tour-btn-solid">
+                        <span>Xem chi tiết</span>
+                        <i class="fa-solid fa-arrow-right-long"></i>
                     </a>
                 </div>
-            </div>
+            </article>
         </div>
+        featuredIndex++;
     }
 </div>
 
     </div>
 </section>
+
+</div>
 
 
 
@@ -431,26 +447,36 @@
             và nền tảng du lịch uy tín tại Việt Nam.
         </p>
 
-        <div class="row justify-content-center align-items-center g-4">
+        <div class="row justify-content-center align-items-center g-4 partner-grid">
 
-            <div class="col-6 col-md-2">
-                <img src="~/img/partners/vnairlines.png" class="partner-logo" alt="Vietnam Airlines" />
+            <div class="col-6 col-md-4 col-lg-2 reveal" style="--stagger:0">
+                <div class="partner-chip">
+                    <img src="~/img/partners/vnairlines.png" class="partner-logo logo-vna" alt="Vietnam Airlines" />
+                </div>
             </div>
 
-            <div class="col-6 col-md-2">
-                <img src="~/img/partners/vietjet.png" class="partner-logo" alt="Vietjet Air" />
+            <div class="col-6 col-md-4 col-lg-2 reveal" style="--stagger:1">
+                <div class="partner-chip">
+                    <img src="~/img/partners/vietjet.png" class="partner-logo logo-vietjet" alt="Vietjet Air" />
+                </div>
             </div>
 
-            <div class="col-6 col-md-2">
-                <img src="~/img/partners/bamboo.png" class="partner-logo" alt="Bamboo Airways" />
+            <div class="col-6 col-md-4 col-lg-2 reveal" style="--stagger:2">
+                <div class="partner-chip">
+                    <img src="~/img/partners/bamboo.png" class="partner-logo logo-bamboo" alt="Bamboo Airways" />
+                </div>
             </div>
 
-            <div class="col-6 col-md-2">
-                <img src="~/img/partners/booking.png" class="partner-logo" alt="Booking.com" />
+            <div class="col-6 col-md-4 col-lg-2 reveal" style="--stagger:3">
+                <div class="partner-chip">
+                    <img src="~/img/partners/booking.png" class="partner-logo logo-booking" alt="Booking.com" />
+                </div>
             </div>
 
-            <div class="col-6 col-md-2">
-                <img src="~/img/partners/traveloka.png" class="partner-logo" alt="Traveloka" />
+            <div class="col-6 col-md-4 col-lg-2 reveal" style="--stagger:4">
+                <div class="partner-chip">
+                    <img src="~/img/partners/traveloka.png" class="partner-logo logo-traveloka" alt="Traveloka" />
+                </div>
             </div>
 
         </div>

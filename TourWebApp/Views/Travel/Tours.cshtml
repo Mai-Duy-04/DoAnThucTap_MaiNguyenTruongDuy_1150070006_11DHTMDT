@@ -1,0 +1,55 @@
+﻿@model TravelToursViewModel
+@{
+    ViewData["Title"] = "Tours";
+}
+
+<main>
+    <section class="page-hero page-hero-tours">
+        <div class="page-hero-overlay"></div>
+        <div class="container travel-container">
+            <span class="section-kicker">Danh sách tour</span>
+            <h1>Tour trọn gói theo từng phong cách du lịch</h1>
+            <p>Từ tour nghỉ dưỡng, khám phá đến tour văn hóa, HappyTrip đều có phương án phù hợp ngân sách của bạn.</p>
+        </div>
+    </section>
+
+    <section class="travel-section">
+        <div class="container travel-container">
+            <div class="filter-chips">
+                @foreach (var filter in Model.Filters)
+                {
+                    var activeClass = string.Equals(filter, Model.SelectedFilter, StringComparison.OrdinalIgnoreCase) ? "chip-active" : "";
+                    <a class="filter-chip @activeClass" href="/tours?filter=@filter">@filter</a>
+                }
+            </div>
+
+            @if (Model.Items.Count == 0)
+            {
+                <div class="empty-state">
+                    <h3>Hiện chưa có tour ở nhóm này.</h3>
+                    <p>Bạn thử đổi bộ lọc để xem thêm lịch trình khác nhé.</p>
+                </div>
+            }
+            else
+            {
+                <div class="tour-grid mt-4">
+                    @foreach (var tour in Model.Items)
+                    {
+                        <partial name="~/Views/Shared/TravelComponents/_TourCard.cshtml" model="tour" />
+                    }
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="travel-section section-cream">
+        <div class="container travel-container custom-trip-card">
+            <div>
+                <span class="section-kicker">Bạn cần tour riêng?</span>
+                <h3>Gửi nhu cầu để HappyTrip thiết kế lịch trình riêng cho bạn.</h3>
+                <p>Đội ngũ tư vấn sẽ tùy chỉnh theo điểm đến, ngày đi, số lượng khách và ngân sách mong muốn.</p>
+            </div>
+            <a href="/contact" class="btn travel-btn travel-btn-primary">Liên hệ tư vấn</a>
+        </div>
+    </section>
+</main>

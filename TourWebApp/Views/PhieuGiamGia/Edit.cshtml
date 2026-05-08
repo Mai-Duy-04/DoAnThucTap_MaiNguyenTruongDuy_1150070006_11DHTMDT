@@ -1,0 +1,143 @@
+﻿@model TourWebApp.Data.Models.PhieuGiamGia
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Sửa phiếu giảm giá";
+    var dsTour = ViewBag.DsTour as IEnumerable<dynamic>;
+    var dsLoaiTour = ViewBag.DsLoaiTour as IEnumerable<dynamic>;
+}
+
+<h3 class="fw-bold mb-3">Sửa phiếu giảm giá - @Model.MaPhieu</h3>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        <form asp-action="Edit" method="post" class="row g-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="IdPhieuGiamGia" />
+            <input type="hidden" asp-for="DaSuDung" />
+            <input type="hidden" asp-for="NgayTao" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="col-md-4">
+                <label asp-for="MaPhieu" class="form-label">Mã phiếu</label>
+                <input asp-for="MaPhieu" class="form-control" />
+                <span asp-validation-for="MaPhieu" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-8">
+                <label asp-for="TenPhieu" class="form-label">Tên phiếu</label>
+                <input asp-for="TenPhieu" class="form-control" />
+                <span asp-validation-for="TenPhieu" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-3">
+                <label asp-for="LoaiGiam" class="form-label">Loại giảm</label>
+                <select asp-for="LoaiGiam" class="form-select">
+                    <option value="PhanTram">Phần trăm (%)</option>
+                    <option value="TienMat">Tiền mặt (VND)</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label asp-for="GiaTriGiam" class="form-label">Giá trị giảm</label>
+                <input asp-for="GiaTriGiam" type="number" step="0.01" min="0" class="form-control" />
+                <span asp-validation-for="GiaTriGiam" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-3">
+                <label asp-for="DonToiThieu" class="form-label">Đơn tối thiểu</label>
+                <input asp-for="DonToiThieu" type="number" min="0" class="form-control" />
+            </div>
+
+            <div class="col-md-3">
+                <label asp-for="GiamToiDa" class="form-label">Giảm tối đa</label>
+                <input asp-for="GiamToiDa" type="number" min="0" class="form-control" />
+            </div>
+
+            <div class="col-md-3">
+                <label asp-for="NgayBatDau" class="form-label">Ngày bắt đầu</label>
+                <input asp-for="NgayBatDau" type="datetime-local" class="form-control" value="@(Model.NgayBatDau?.ToString("yyyy-MM-ddTHH:mm"))" />
+            </div>
+
+            <div class="col-md-3">
+                <label asp-for="NgayKetThuc" class="form-label">Ngày kết thúc</label>
+                <input asp-for="NgayKetThuc" type="datetime-local" class="form-control" value="@(Model.NgayKetThuc?.ToString("yyyy-MM-ddTHH:mm"))" />
+                <span asp-validation-for="NgayKetThuc" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-3">
+                <label asp-for="TongLuotSuDung" class="form-label">Tổng lượt sử dụng</label>
+                <input asp-for="TongLuotSuDung" type="number" min="1" class="form-control" />
+            </div>
+
+            <div class="col-md-3">
+                <label asp-for="LuotToiDaMoiTaiKhoan" class="form-label">Lượt mỗi tài khoản</label>
+                <input asp-for="LuotToiDaMoiTaiKhoan" type="number" min="1" class="form-control" />
+                <span asp-validation-for="LuotToiDaMoiTaiKhoan" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="PhamViApDung" class="form-label">Phạm vi áp dụng</label>
+                <select asp-for="PhamViApDung" class="form-select">
+                    <option value="TatCa">Tất cả tour</option>
+                    <option value="Tour">Theo tour</option>
+                    <option value="LoaiTour">Theo loại tour</option>
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="IdTour" class="form-label">Tour áp dụng</label>
+                <select asp-for="IdTour" class="form-select">
+                    <option value="">-- Chọn tour --</option>
+                    @if (dsTour != null)
+                    {
+                        foreach (var t in dsTour)
+                        {
+                            <option value="@t.IdTour" selected="@t.Selected">@t.TenTour</option>
+                        }
+                    }
+                </select>
+                <span asp-validation-for="IdTour" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="IdLoaiTour" class="form-label">Loại tour áp dụng</label>
+                <select asp-for="IdLoaiTour" class="form-select">
+                    <option value="">-- Chọn loại tour --</option>
+                    @if (dsLoaiTour != null)
+                    {
+                        foreach (var l in dsLoaiTour)
+                        {
+                            <option value="@l.IdLoaiTour" selected="@l.Selected">@l.TenLoai</option>
+                        }
+                    }
+                </select>
+                <span asp-validation-for="IdLoaiTour" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="MoTa" class="form-label">Mô tả</label>
+                <textarea asp-for="MoTa" rows="3" class="form-control"></textarea>
+            </div>
+
+            <div class="col-12 form-check ms-2">
+                <input asp-for="TrangThai" class="form-check-input" />
+                <label asp-for="TrangThai" class="form-check-label">Đang hoạt động</label>
+            </div>
+
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <div class="text-muted small">
+                    Đã sử dụng: <strong>@Model.DaSuDung</strong> lượt
+                </div>
+                <div class="d-flex gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary">Quay lại</a>
+                    <button class="btn btn-primary" type="submit">Cập nhật</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,83 @@
+﻿@model TravelContactViewModel
+@{
+    ViewData["Title"] = "Liên hệ";
+}
+
+<main>
+    <section class="page-hero page-hero-contact">
+        <div class="page-hero-overlay"></div>
+        <div class="container travel-container">
+            <span class="section-kicker">Liên hệ</span>
+            <h1>Lên kế hoạch cùng HappyTrip</h1>
+            <p>Gửi nhu cầu điểm đến, số người đi và thời gian dự kiến, tụi mình sẽ tư vấn lịch trình phù hợp.</p>
+        </div>
+    </section>
+
+    <section class="travel-section">
+        <div class="container travel-container">
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <div class="contact-form-card reveal">
+                        <h2>Thông tin chuyến đi của bạn</h2>
+                        <p>HappyTrip sẽ phản hồi với lịch trình gợi ý và mức chi phí phù hợp trong thời gian sớm nhất.</p>
+
+                        @if (Model.IsSubmitted)
+                        {
+                            <div class="alert alert-success mt-3" role="alert">@Model.SuccessMessage</div>
+                        }
+
+                        <form method="post" action="/contact" novalidate class="mt-4">
+                            @Html.AntiForgeryToken()
+                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="Form.Name" class="form-label">Họ và tên</label>
+                                    <input asp-for="Form.Name" class="form-control" />
+                                    <span asp-validation-for="Form.Name" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Form.Email" class="form-label">Email</label>
+                                    <input asp-for="Form.Email" class="form-control" />
+                                    <span asp-validation-for="Form.Email" class="text-danger"></span>
+                                </div>
+                                <div class="col-12">
+                                    <label asp-for="Form.Destination" class="form-label">Điểm đến mong muốn</label>
+                                    <input asp-for="Form.Destination" class="form-control" placeholder="Ví dụ: Phú Quốc, Đà Lạt, Cần Thơ..." />
+                                </div>
+                                <div class="col-12">
+                                    <label asp-for="Form.Message" class="form-label">Nội dung cần tư vấn</label>
+                                    <textarea asp-for="Form.Message" class="form-control" rows="5" placeholder="Mô tả thời gian đi, số lượng người, ngân sách dự kiến và nhu cầu của bạn..."></textarea>
+                                    <span asp-validation-for="Form.Message" class="text-danger"></span>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn travel-btn travel-btn-primary">Gửi yêu cầu tư vấn</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-lg-5">
+                    <aside class="contact-info-card reveal">
+                        <h3>Thông tin liên hệ</h3>
+                        <p>Đội ngũ tư vấn của HappyTrip luôn sẵn sàng hỗ trợ từ lúc bạn lên ý tưởng đến khi chốt tour.</p>
+                        <ul>
+                            <li><i class="fa-regular fa-envelope"></i> happytrip@gmail.com</li>
+                            <li><i class="fa-solid fa-phone"></i> +84 938 179 170</li>
+                            <li><i class="fa-solid fa-location-dot"></i> Bình Thạnh, TP.HCM</li>
+                        </ul>
+                        <div class="contact-socials">
+                            <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                            <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                            <a href="#" aria-label="Youtube"><i class="fa-brands fa-youtube"></i></a>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

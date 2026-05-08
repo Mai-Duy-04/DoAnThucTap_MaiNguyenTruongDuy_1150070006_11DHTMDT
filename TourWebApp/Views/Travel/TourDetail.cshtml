@@ -1,0 +1,58 @@
+﻿@model TravelTourDetailViewModel
+@{
+    ViewData["Title"] = "Chi tiết tour";
+    var tour = Model.Item;
+}
+
+<main>
+    <section class="page-hero" style="background-image: url('@tour.ImageUrl');">
+        <div class="page-hero-overlay"></div>
+        <div class="container travel-container">
+            <span class="section-kicker">Tour HappyTrip</span>
+            <h1>@tour.Name</h1>
+            <p>@tour.Duration - Đánh giá @tour.Rating.ToString("0.0")/5</p>
+        </div>
+    </section>
+
+    <section class="travel-section">
+        <div class="container travel-container">
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <article class="detail-panel reveal">
+                        <h2>Thông tin chi tiết</h2>
+                        <p>@tour.Description</p>
+                        <ul class="detail-list">
+                            <li>Loại tour: @tour.Category</li>
+                            <li>Thời lượng: @tour.Duration</li>
+                            <li>Đánh giá: @tour.Rating.ToString("0.0")/5</li>
+                        </ul>
+                    </article>
+                </div>
+                <div class="col-lg-4">
+                    <aside class="detail-panel reveal">
+                        <h3>Giá tour</h3>
+                        <div class="detail-price">@tour.Price.ToString("N0")đ</div>
+                        <p>Giá có thể thay đổi theo ngày khởi hành và dịch vụ kèm theo.</p>
+                        <div class="detail-actions">
+                            <a class="btn travel-btn travel-btn-primary" href="/contact">Đặt tour ngay</a>
+                            <a class="btn travel-btn travel-btn-outline detail-outline" href="/tours">Quay lại danh sách</a>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="travel-section section-cream">
+        <div class="container travel-container">
+            <partial name="~/Views/Shared/TravelComponents/_SectionHeading.cshtml"
+                     model='new SectionHeadingModel { Kicker = "Gợi ý thêm", Title = "Tour liên quan", Description = "Bạn có thể quan tâm thêm những lịch trình dưới đây.", AlignClass = "text-center" }' />
+            <div class="tour-grid mt-4">
+                @foreach (var relatedTour in Model.RelatedTours)
+                {
+                    <partial name="~/Views/Shared/TravelComponents/_TourCard.cshtml" model="relatedTour" />
+                }
+            </div>
+        </div>
+    </section>
+</main>

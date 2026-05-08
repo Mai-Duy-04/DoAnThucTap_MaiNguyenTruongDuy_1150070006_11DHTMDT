@@ -72,4 +72,10 @@ public partial class Tour
 
     [InverseProperty("IdTourNavigation")]
     public virtual ICollection<TourGiaChiTiet> TourGiaChiTiets { get; set; } = new List<TourGiaChiTiet>();
+
+    [InverseProperty("IdTourNavigation")]
+    public virtual ICollection<PhieuGiamGia> PhieuGiamGias { get; set; } = new List<PhieuGiamGia>();
+
+    [InverseProperty("IdTourNavigation")]
+    public virtual ICollection<WishlistTour> WishlistTours { get; set; } = new List<WishlistTour>();
 }

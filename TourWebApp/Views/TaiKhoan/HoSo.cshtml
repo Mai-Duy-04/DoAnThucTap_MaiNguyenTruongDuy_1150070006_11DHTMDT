@@ -4,161 +4,211 @@
 @{
     ViewData["Title"] = "Hồ sơ cá nhân";
     var ds = ViewBag.DonCuaToi as List<DonDatTour>;
+    var totalOrders = ds?.Count ?? 0;
+    var pendingOrders = ds?.Count(x => x.TrangThai == "ChoThanhToan") ?? 0;
+    var paidOrders = ds?.Count(x => x.TrangThai == "ThanhToanThanhCong") ?? 0;
 }
 
-<link rel="stylesheet" href="~/css/profile.css" />
-<link rel="stylesheet" href="~/css/doncuatoi.css" />
+<link rel="stylesheet" href="~/css/account-dashboard.css" asp-append-version="true" />
 
-<div class="profile-wrapper">
-    <div class="profile-card">
-
-        <h3>👤 Hồ sơ cá nhân</h3>
-        <p>Cập nhật thông tin tài khoản của bạn</p>
-
-        @if (ViewBag.ThongBao != null)
-        {
-            <div class="profile-success">@ViewBag.ThongBao</div>
-        }
-
-        <form method="post">
-            <input type="hidden" asp-for="IdTaiKhoan" />
-
-            <div class="form-group">
-                <label>Họ và tên</label>
-                <input asp-for="HoTen" placeholder="Nhập họ tên" />
+<div class="account-dashboard-page">
+    <div class="account-dashboard-shell">
+        <aside class="account-dashboard-sidebar">
+            <div class="account-user-chip">
+                <div class="account-user-avatar">@((Model.HoTen ?? "U").Trim().Substring(0, 1).ToUpper())</div>
+                <div>
+                    <p class="account-user-kicker">Tài khoản khách hàng</p>
+                    <h2>@Model.HoTen</h2>
+                    <p class="account-user-email">@Model.Email</p>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Email</label>
-                <input value="@Model.Email" readonly class="readonly-input" />
+            <nav class="account-dashboard-nav" aria-label="Điều hướng tài khoản">
+                <a href="#profileSection" class="is-active">Hồ sơ cá nhân</a>
+                <a href="#passwordSection">Đổi mật khẩu</a>
+                <a href="#orderSection">Đơn của tôi</a>
+            </nav>
+
+            <div class="account-quick-stats">
+                <article>
+                    <span>Tổng đơn</span>
+                    <strong>@totalOrders</strong>
+                </article>
+                <article>
+                    <span>Chờ thanh toán</span>
+                    <strong>@pendingOrders</strong>
+                </article>
+                <article>
+                    <span>Đã thanh toán</span>
+                    <strong>@paidOrders</strong>
+                </article>
             </div>
+        </aside>
 
-            <div class="form-group">
-                <label>Số điện thoại</label>
-                <input asp-for="SoDienThoai" placeholder="Nhập số điện thoại" />
-            </div>
+        <section class="account-dashboard-main">
+            <div id="profileSection" class="account-panel">
+                <div class="account-panel-head">
+                    <h3>Hồ sơ cá nhân</h3>
+                    <p>Cập nhật thông tin tài khoản của bạn.</p>
+                </div>
 
-            <div class="form-group">
-                <label>Địa chỉ</label>
-                <textarea asp-for="DiaChi" placeholder="Nhập địa chỉ"></textarea>
-            </div>
-
-            <button class="btn-save">Lưu thay đổi</button>
-        </form>
-
-        <!-- =================== ĐƠN CỦA TÔI =================== -->
-        <div class="my-orders">
-            <h4>📦 Đơn của tôi</h4>
-
-            @if (ds != null && ds.Any())
-            {
-                foreach (var don in ds)
+                @if (ViewBag.ThongBao != null)
                 {
-                    <div class="order-item">
+                    <div class="account-alert-success">@ViewBag.ThongBao</div>
+                }
 
-                        <div class="order-top">
-                            <span><strong>Mã đơn:</strong> @don.MaBooking</span>
-                            <span class="status @don.TrangThai">@don.TrangThai</span>
+                <form method="post" class="account-profile-form">
+                    <input type="hidden" asp-for="IdTaiKhoan" />
+
+                    <div class="account-form-grid">
+                        <div class="account-form-group">
+                            <label>Họ và tên</label>
+                            <input asp-for="HoTen" placeholder="Nhập họ tên" />
                         </div>
 
-                        <div class="order-body">
-                            <p><strong>Tour:</strong> @don.IdTourNavigation?.TenTour</p>
-                            <p><strong>Ngày đặt:</strong> @don.NgayDat.ToString("dd/MM/yyyy HH:mm")</p>
-                            <p><strong>Tổng tiền:</strong> @don.TongTien.ToString("N0") đ</p>
+                        <div class="account-form-group">
+                            <label>Email</label>
+                            <input value="@Model.Email" readonly class="account-readonly-input" />
                         </div>
 
-                       
-                        <div class="order-timeline animated">
+                        <div class="account-form-group">
+                            <label>Số điện thoại</label>
+                            <input asp-for="SoDienThoai" placeholder="Nhập số điện thoại" />
+                        </div>
 
-                            <!-- BƯỚC 1 -->
-                            <div class="step done tooltip-box">
-                                <span class="circle"></span>
-                                <span class="label">Tạo đơn</span>
-                                <small>@don.NgayDat.ToString("HH:mm dd/MM")</small>
+                        <div class="account-form-group account-form-group-full">
+                            <label>Địa chỉ</label>
+                            <textarea asp-for="DiaChi" placeholder="Nhập địa chỉ"></textarea>
+                        </div>
+                    </div>
 
-                                <div class="tooltip-content">
-                                    🟡 <b>Đơn đã được tạo</b><br/>
-                                    Thời gian tạo: @don.NgayDat.ToString("HH:mm dd/MM/yyyy")
+                    <button class="account-btn-save" type="submit">Lưu thay đổi</button>
+                </form>
+            </div>
+
+            <div id="passwordSection" class="account-panel">
+                <div class="account-panel-head">
+                    <h4>Đổi mật khẩu</h4>
+                    <p>Thiết lập mật khẩu mới để bảo mật tài khoản tốt hơn.</p>
+                </div>
+
+                <form method="post" action="/TaiKhoan/DoiMatKhau" class="account-profile-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="idTaiKhoan" value="@Model.IdTaiKhoan" />
+
+                    <div class="account-form-grid">
+                        <div class="account-form-group account-form-group-full">
+                            <label>Mật khẩu hiện tại</label>
+                            <input type="password" name="matKhauHienTai" placeholder="Nhập mật khẩu hiện tại" required />
+                        </div>
+
+                        <div class="account-form-group">
+                            <label>Mật khẩu mới</label>
+                            <input type="password" name="matKhauMoi" placeholder="Tối thiểu 6 ký tự" required minlength="6" />
+                        </div>
+
+                        <div class="account-form-group">
+                            <label>Xác nhận mật khẩu mới</label>
+                            <input type="password" name="xacNhanMatKhau" placeholder="Nhập lại mật khẩu mới" required minlength="6" />
+                        </div>
+                    </div>
+
+                    <button class="account-btn-save" type="submit">Cập nhật mật khẩu</button>
+                </form>
+            </div>
+
+            <div id="orderSection" class="account-panel account-orders-panel">
+                <div class="account-panel-head account-panel-head-inline">
+                    <h4>Đơn của tôi</h4>
+                    <a href="/TaiKhoan/DonCuaToi" class="account-outline-link">Xem dạng bảng</a>
+                </div>
+
+                @if (ds != null && ds.Any())
+                {
+                    <div class="account-order-grid">
+                        @foreach (var don in ds)
+                        {
+                            var guestCount = don.NguoiLon + don.TreEm + don.TreNho;
+                            <article class="account-order-card">
+                                <div class="account-order-top">
+                                    <div>
+                                        <p class="account-order-code">Mã đơn: <strong>@don.MaBooking</strong></p>
+                                        <h5>@(don.IdTourNavigation?.TenTour ?? "Tour đang cập nhật")</h5>
+                                    </div>
+                                    <span class="account-status @don.TrangThai">@don.TrangThai</span>
                                 </div>
-                            </div>
 
-                            <div class="line"></div>
+                                <div class="account-order-meta">
+                                    <span><i class="fa-regular fa-calendar"></i> @don.NgayDat.ToString("dd/MM/yyyy HH:mm")</span>
+                                    <span><i class="fa-solid fa-users"></i> @guestCount khách</span>
+                                    <span class="amount"><i class="fa-solid fa-wallet"></i> @don.TongTien.ToString("N0") đ</span>
+                                </div>
 
-                            <!-- BƯỚC 2 -->
-                            <div class="step @(don.TrangThai == "ThanhToanThanhCong" ? "done" : "") tooltip-box">
-                                <span class="circle"></span>
-                                <span class="label">Thanh toán</span>
-                                <small>
-                                    @(don.NgayThanhToan.HasValue ? don.NgayThanhToan.Value.ToString("HH:mm dd/MM") : "--")
-                                </small>
+                                <div class="account-order-progress">
+                                    <div class="account-progress-step done">Tạo đơn</div>
+                                    <div class="account-progress-step @(don.TrangThai == "ThanhToanThanhCong" ? "done" : "")">Thanh toán</div>
+                                    <div class="account-progress-step @(don.TrangThai == "DaHuy" ? "cancel" : "done")">@(don.TrangThai == "DaHuy" ? "Đã hủy" : "Xác nhận")</div>
+                                </div>
 
-                                <div class="tooltip-content">
+                                <div class="account-order-actions">
+                                    <a class="account-btn-view" href="/TaiKhoan/ChiTietDon?idDon=@don.IdDon">Xem chi tiết</a>
+
                                     @if (don.TrangThai == "ChoThanhToan")
                                     {
-                                        <text>
-                                        🟡 <b>Chờ thanh toán</b><br/>
-                                        Đơn được giữ chỗ trong 10 phút.<br/>
-                                        Vui lòng thanh toán trước khi hết hạn.
-                                        </text>
-                                    }
-                                    else
-                                    {
-                                        <text>
-                                        🟢 <b>Đã thanh toán</b><br/>
-                                        Hệ thống đã nhận tiền và xác nhận đơn.
-                                        </text>
+                                        <a class="account-btn-extend" href="/DatTour/GiaHanThanhToan?idDon=@don.IdDon">Gia hạn 5 phút</a>
                                     }
                                 </div>
-                            </div>
-
-                            <div class="line"></div>
-
-                            <!-- BƯỚC 3 -->
-                            <div class="step @(don.TrangThai == "DaHuy" ? "cancel" : "done") tooltip-box">
-                                <span class="circle"></span>
-                                <span class="label">Hoàn tất / Hủy</span>
-                                <small>@(don.TrangThai == "DaHuy" ? "Đã hủy" : "Hoàn tất")</small>
-
-                                <div class="tooltip-content">
-                                    @if (don.TrangThai == "DaHuy")
-                                    {
-                                        <text>
-                                        🔴 <b>Đơn đã bị hủy</b><br/>
-                                        Nguyên nhân: Hết thời gian thanh toán.
-                                        </text>
-                                    }
-                                    else
-                                    {
-                                        <text>
-                                        🟢 <b>Đơn hoàn tất</b><br/>
-                                        Tour đã được xác nhận thành công.
-                                        </text>
-                                    }
-                                </div>
-                            </div>
-
-                        </div>
-
-
-                        <div class="order-actions">
-                            <a class="btn-view" href="/TaiKhoan/ChiTietDon?idDon=@don.IdDon">Xem chi tiết</a>
-
-                            @if (don.TrangThai == "ChoThanhToan")
-                            {
-                                <a class="btn-extend" href="/DatTour/GiaHanThanhToan?idDon=@don.IdDon">
-                                    Gia hạn 5 phút
-                                </a>
-                            }
-                        </div>
-
+                            </article>
+                        }
                     </div>
                 }
-            }
-            else
-            {
-                <p>😿 Bạn chưa có đơn đặt tour nào.</p>
-            }
-        </div>
+                else
+                {
+                    <div class="account-empty-order">Bạn chưa có đơn đặt tour nào.</div>
+                }
+            </div>
 
+        </section>
     </div>
 </div>
+
+@{
+    var passwordNotifyMessage = ViewBag.ThongBaoMatKhau as string;
+    var passwordErrorMessage = ViewBag.LoiMatKhau as string;
+    var passwordModalMessage = !string.IsNullOrWhiteSpace(passwordNotifyMessage) ? passwordNotifyMessage : passwordErrorMessage;
+    var passwordModalIsSuccess = !string.IsNullOrWhiteSpace(passwordNotifyMessage);
+}
+
+@if (!string.IsNullOrWhiteSpace(passwordModalMessage))
+{
+    <div id="accountNotifyModal" class="account-notify-modal is-open" role="dialog" aria-modal="true" aria-labelledby="accountNotifyTitle">
+        <div class="account-notify-backdrop" data-close-notify></div>
+        <div class="account-notify-card">
+            <button type="button" class="account-notify-close" aria-label="Đóng" data-close-notify>&times;</button>
+            <div class="account-notify-icon @(passwordModalIsSuccess ? "is-success" : "is-error")">@(passwordModalIsSuccess ? "✓" : "!")</div>
+            <h5 id="accountNotifyTitle">@(passwordModalIsSuccess ? "Thành công" : "Có lỗi xảy ra")</h5>
+            <p>@passwordModalMessage</p>
+            <button type="button" class="account-btn-save account-notify-btn" data-close-notify>Đã hiểu</button>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var modal = document.getElementById('accountNotifyModal');
+            if (!modal) return;
+
+            var closeButtons = modal.querySelectorAll('[data-close-notify]');
+            var closeModal = function () { modal.classList.remove('is-open'); };
+
+            closeButtons.forEach(function (btn) {
+                btn.addEventListener('click', closeModal);
+            });
+
+            document.addEventListener('keydown', function (evt) {
+                if (evt.key === 'Escape' && modal.classList.contains('is-open')) {
+                    closeModal();
+                }
+            });
+        })();
+    </script>
+}

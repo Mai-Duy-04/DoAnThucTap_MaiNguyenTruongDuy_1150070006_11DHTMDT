@@ -19,4 +19,7 @@ public partial class LoaiTour
 
     [InverseProperty("IdLoaiTourNavigation")]
     public virtual ICollection<Tour> Tours { get; set; } = new List<Tour>();
+
+    [InverseProperty("IdLoaiTourNavigation")]
+    public virtual ICollection<PhieuGiamGia> PhieuGiamGias { get; set; } = new List<PhieuGiamGia>();
 }

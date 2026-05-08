@@ -19,16 +19,9 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        
-       var tourNoiBat = _context.Tours
-        .Where(t => t.TrangThai == true)
-        .OrderByDescending(t => t.SoNguoiDaDat)
-        .Take(3)
-        .ToList();
-
-        ViewBag.TourNoiBat = tourNoiBat;
-
-        return View();
+        // Canonical homepage is "/" -> Travel/Index.
+        // Redirect Home/Index here to avoid logged-in/logged-out UI mismatch.
+        return RedirectToAction("Index", "Travel");
     }
 
     public IActionResult Privacy()

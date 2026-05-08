@@ -23,6 +23,12 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<DonDatTour> DonDatTours { get; set; }
 
+    public virtual DbSet<PhieuGiamGia> PhieuGiamGias { get; set; }
+
+    public virtual DbSet<PhieuGiamGiaTaiKhoan> PhieuGiamGiaTaiKhoans { get; set; }
+
+    public virtual DbSet<PhieuGiamGiaSuDung> PhieuGiamGiaSuDungs { get; set; }
+
     public virtual DbSet<HinhTour> HinhTours { get; set; }
 
     public virtual DbSet<LichKhoiHanh> LichKhoiHanhs { get; set; }
@@ -38,6 +44,8 @@ public partial class ApplicationDbContext : DbContext
     public virtual DbSet<Tour> Tours { get; set; }
 
     public virtual DbSet<TourGiaChiTiet> TourGiaChiTiets { get; set; }
+
+    public virtual DbSet<WishlistTour> WishlistTours { get; set; }
 
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -113,6 +121,71 @@ public partial class ApplicationDbContext : DbContext
             entity.HasOne(d => d.IdTourNavigation).WithMany(p => p.DonDatTours)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Don_Tour");
+
+            entity.HasOne(d => d.IdPhieuGiamGiaNavigation).WithMany(p => p.DonDatTours)
+                .HasForeignKey(d => d.IdPhieuGiamGia)
+                .HasConstraintName("FK_Don_PhieuGiamGia");
+        });
+
+        modelBuilder.Entity<PhieuGiamGia>(entity =>
+        {
+            entity.HasKey(e => e.IdPhieuGiamGia).HasName("PK_PhieuGiamGia");
+
+            entity.Property(e => e.DaSuDung).HasDefaultValue(0);
+            entity.Property(e => e.DonToiThieu).HasDefaultValue(0);
+            entity.Property(e => e.LoaiGiam).HasDefaultValue("PhanTram");
+            entity.Property(e => e.NgayTao).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.PhamViApDung).HasDefaultValue("TatCa");
+            entity.Property(e => e.TrangThai).HasDefaultValue(true);
+
+            entity.HasOne(d => d.IdTourNavigation).WithMany(p => p.PhieuGiamGias)
+                .HasForeignKey(d => d.IdTour)
+                .HasConstraintName("FK_PGG_Tour");
+
+            entity.HasOne(d => d.IdLoaiTourNavigation).WithMany(p => p.PhieuGiamGias)
+                .HasForeignKey(d => d.IdLoaiTour)
+                .HasConstraintName("FK_PGG_LoaiTour");
+        });
+
+        modelBuilder.Entity<PhieuGiamGiaTaiKhoan>(entity =>
+        {
+            entity.HasKey(e => e.IdLuu).HasName("PK_PhieuGiamGiaTaiKhoan");
+
+            entity.Property(e => e.NgayLuu).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.TrangThai).HasDefaultValue(true);
+
+            entity.HasOne(d => d.IdPhieuGiamGiaNavigation).WithMany(p => p.PhieuGiamGiaTaiKhoans)
+                .HasForeignKey(d => d.IdPhieuGiamGia)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PGGTK_PGG");
+
+            entity.HasOne(d => d.IdTaiKhoanNavigation).WithMany(p => p.PhieuGiamGiaTaiKhoans)
+                .HasForeignKey(d => d.IdTaiKhoan)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PGGTK_TK");
+        });
+
+        modelBuilder.Entity<PhieuGiamGiaSuDung>(entity =>
+        {
+            entity.HasKey(e => e.IdSuDung).HasName("PK_PhieuGiamGiaSuDung");
+
+            entity.Property(e => e.ThoiDiemSuDung).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.TrangThai).HasDefaultValue("GiuCho");
+
+            entity.HasOne(d => d.IdPhieuGiamGiaNavigation).WithMany(p => p.PhieuGiamGiaSuDungs)
+                .HasForeignKey(d => d.IdPhieuGiamGia)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PGGSD_PGG");
+
+            entity.HasOne(d => d.IdDonNavigation).WithMany(p => p.PhieuGiamGiaSuDungs)
+                .HasForeignKey(d => d.IdDon)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PGGSD_Don");
+
+            entity.HasOne(d => d.IdTaiKhoanNavigation).WithMany(p => p.PhieuGiamGiaSuDungs)
+                .HasForeignKey(d => d.IdTaiKhoan)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PGGSD_TaiKhoan");
         });
 
         modelBuilder.Entity<HinhTour>(entity =>
@@ -193,6 +266,22 @@ public partial class ApplicationDbContext : DbContext
             entity.HasOne(d => d.IdTourNavigation).WithMany(p => p.TourGiaChiTiets)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Gia_Tour");
+        });
+
+        modelBuilder.Entity<WishlistTour>(entity =>
+        {
+            entity.HasKey(e => e.IdWishlist).HasName("PK_WishlistTour");
+            entity.Property(e => e.NgayTao).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.IdTaiKhoanNavigation).WithMany(p => p.WishlistTours)
+                .HasForeignKey(d => d.IdTaiKhoan)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Wishlist_TaiKhoan");
+
+            entity.HasOne(d => d.IdTourNavigation).WithMany(p => p.WishlistTours)
+                .HasForeignKey(d => d.IdTour)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Wishlist_Tour");
         });
         modelBuilder.HasSequence<int>("SeqBooking");
 

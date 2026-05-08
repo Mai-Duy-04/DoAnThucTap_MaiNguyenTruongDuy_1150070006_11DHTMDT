@@ -1,0 +1,216 @@
+﻿@model List<TourWebApp.Data.Models.PhieuGiamGiaTaiKhoan>
+@using TourWebApp.Data.Models
+@{
+    ViewData["Title"] = "Kho voucher";
+
+    var danhSachCoTheLuu = ViewBag.DanhSachPhieuCoTheLuu as List<PhieuGiamGia> ?? new List<PhieuGiamGia>();
+    var daLuuIds = ViewBag.DaLuuIds as List<int> ?? new List<int>();
+
+    string FormatGiam(PhieuGiamGia p)
+    {
+        if (string.Equals(p.LoaiGiam, "PhanTram", StringComparison.OrdinalIgnoreCase))
+        {
+            var text = $"{p.GiaTriGiam:N0}%";
+            if (p.GiamToiDa.HasValue && p.GiamToiDa.Value > 0)
+            {
+                text += $" (tối đa {p.GiamToiDa.Value:N0} đ)";
+            }
+            return text;
+        }
+
+        return $"{p.GiaTriGiam:N0} đ";
+    }
+
+    string FormatPhamVi(PhieuGiamGia p)
+    {
+        if (string.Equals(p.PhamViApDung, "Tour", StringComparison.OrdinalIgnoreCase))
+        {
+            return p.IdTourNavigation?.TenTour is string tenTour && !string.IsNullOrWhiteSpace(tenTour)
+                ? $"Theo tour: {tenTour}"
+                : "Theo tour";
+        }
+
+        if (string.Equals(p.PhamViApDung, "LoaiTour", StringComparison.OrdinalIgnoreCase))
+        {
+            return p.IdLoaiTourNavigation?.TenLoai is string tenLoai && !string.IsNullOrWhiteSpace(tenLoai)
+                ? $"Theo loại: {tenLoai}"
+                : "Theo loại";
+        }
+
+        return "Tất cả tour";
+    }
+}
+
+<link rel="stylesheet" href="~/css/account-dashboard.css" asp-append-version="true" />
+
+<div class="account-dashboard-page">
+    <div class="account-dashboard-shell">
+        <aside class="account-dashboard-sidebar">
+            <div class="account-user-chip">
+                <div class="account-user-avatar">@((Context.Session.GetString("HoTen") ?? "U").Trim().Substring(0, 1).ToUpper())</div>
+                <div>
+                    <p class="account-user-kicker">Kho mã giảm giá</p>
+                    <h2>@(Context.Session.GetString("HoTen") ?? "Khách hàng")</h2>
+                    <p class="account-user-email">Lưu voucher để dùng nhanh khi đặt tour</p>
+                </div>
+            </div>
+
+            <nav class="account-dashboard-nav" aria-label="Điều hướng tài khoản">
+                <a href="/TaiKhoan/HoSo">Hồ sơ cá nhân</a>
+                <a href="/TaiKhoan/DonCuaToi">Đơn của tôi</a>
+                <a href="/TaiKhoan/KhoPhieuGiamGia" class="is-active">Kho voucher</a>
+            </nav>
+        </aside>
+
+        <section class="account-dashboard-main">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">@TempData["Success"]</div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-warning">@TempData["Error"]</div>
+            }
+            @if (TempData["Info"] != null)
+            {
+                <div class="alert alert-info">@TempData["Info"]</div>
+            }
+
+            <div class="account-panel mb-4">
+                <div class="account-panel-head">
+                    <h3>Voucher đã lưu</h3>
+                    <p>Copy mã này và dán vào form đặt tour tại bước nhập thông tin.</p>
+                </div>
+
+                @if (Model == null || !Model.Any())
+                {
+                    <div class="account-empty-order">Bạn chưa lưu voucher nào.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Mã</th>
+                                    <th>Nội dung</th>
+                                    <th>Ưu đãi</th>
+                                    <th>Điều kiện</th>
+                                    <th>Hết hạn</th>
+                                    <th class="text-end">Tác vụ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model)
+                                {
+                                    var p = item.IdPhieuGiamGiaNavigation;
+                                    if (p == null) { continue; }
+
+                                    <tr>
+                                        <td><span class="badge bg-success fs-6">@p.MaPhieu</span></td>
+                                        <td>
+                                            <div class="fw-semibold">@p.TenPhieu</div>
+                                            <div class="small text-muted">@FormatPhamVi(p)</div>
+                                        </td>
+                                        <td>@FormatGiam(p)</td>
+                                        <td>Đơn tối thiểu: @p.DonToiThieu.ToString("N0") đ</td>
+                                        <td>@(p.NgayKetThuc?.ToString("dd/MM/yyyy HH:mm") ?? "Không giới hạn")</td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-primary me-1 js-copy-voucher" data-code="@p.MaPhieu">Copy mã</button>
+                                            <form asp-action="BoLuuPhieuGiamGia" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="idPhieuGiamGia" value="@p.IdPhieuGiamGia" />
+                                                <button class="btn btn-sm btn-outline-danger" type="submit">Bỏ lưu</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <div class="account-panel">
+                <div class="account-panel-head">
+                    <h3>Voucher có sẵn</h3>
+                    <p>Lưu vào kho để dùng sau. Hệ thống vẫn sẽ check điều kiện khi áp mã.</p>
+                </div>
+
+                @if (!danhSachCoTheLuu.Any())
+                {
+                    <div class="account-empty-order">Hiện chưa có voucher đang mở.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Mã</th>
+                                    <th>Nội dung</th>
+                                    <th>Ưu đãi</th>
+                                    <th>Điều kiện</th>
+                                    <th>Hết hạn</th>
+                                    <th class="text-end">Tác vụ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in danhSachCoTheLuu)
+                                {
+                                    var daLuu = daLuuIds.Contains(p.IdPhieuGiamGia);
+
+                                    <tr>
+                                        <td><span class="badge bg-light text-dark fs-6">@p.MaPhieu</span></td>
+                                        <td>
+                                            <div class="fw-semibold">@p.TenPhieu</div>
+                                            <div class="small text-muted">@FormatPhamVi(p)</div>
+                                        </td>
+                                        <td>@FormatGiam(p)</td>
+                                        <td>Đơn tối thiểu: @p.DonToiThieu.ToString("N0") đ</td>
+                                        <td>@(p.NgayKetThuc?.ToString("dd/MM/yyyy HH:mm") ?? "Không giới hạn")</td>
+                                        <td class="text-end">
+                                            @if (daLuu)
+                                            {
+                                                <span class="badge bg-success">Đã lưu</span>
+                                            }
+                                            else
+                                            {
+                                                <form asp-action="LuuPhieuGiamGia" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="idPhieuGiamGia" value="@p.IdPhieuGiamGia" />
+                                                    <button class="btn btn-sm btn-primary" type="submit">Lưu vào kho</button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".js-copy-voucher").forEach(function (btn) {
+                btn.addEventListener("click", async function () {
+                    const code = btn.getAttribute("data-code") || "";
+                    if (!code) return;
+
+                    try {
+                        await navigator.clipboard.writeText(code);
+                        btn.textContent = "Đã copy";
+                        setTimeout(function () { btn.textContent = "Copy mã"; }, 1200);
+                    } catch {
+                        alert("Không copy được mã, vui lòng copy thủ công: " + code);
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,75 @@
+@model List<TourWebApp.Data.Models.WishlistTour>
+
+@{
+    ViewData["Title"] = "Tour yêu thích";
+}
+
+<style>
+    .wishlist-page{max-width:1280px}
+    .wishlist-page .wishlist-head{margin-bottom:1.25rem!important}
+    .wishlist-page .wishlist-head h2{font-family:"Sora","Segoe UI",sans-serif!important;font-size:clamp(1.8rem,2.6vw,2.5rem)!important;font-weight:800!important;color:#0f3554!important;letter-spacing:-.02em}
+    .wishlist-page .wishlist-explore-btn{background:#fff!important;border:1px solid #c8d9e6!important;color:#0f4b73!important;border-radius:12px!important;font-weight:700!important;padding:.6rem 1rem!important}
+
+    .wishlist-page .wishlist-card{background:#fff!important;border:1px solid #dbe7f0!important;border-radius:18px!important;box-shadow:0 14px 28px rgba(18,54,84,.12)!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;height:100%!important;transition:.22s ease}
+    .wishlist-page .wishlist-card:hover{transform:translateY(-6px);box-shadow:0 22px 40px rgba(18,54,84,.18)!important}
+    .wishlist-page .wishlist-media-wrap{position:relative;height:220px!important;overflow:hidden}
+    .wishlist-page .wishlist-media{width:100%!important;height:100%!important;object-fit:cover!important;display:block}
+    .wishlist-page .wishlist-badge{position:absolute;top:12px;left:12px;background:rgba(12,30,45,.86)!important;color:#fff!important;border-radius:999px;padding:.35rem .7rem;font-size:.82rem;font-weight:700}
+
+    .wishlist-page .wishlist-body{padding:1rem 1rem 1.1rem!important;display:flex!important;flex-direction:column!important;gap:.35rem}
+    .wishlist-page .wishlist-title{font-family:"Sora","Segoe UI",sans-serif!important;font-size:1.25rem!important;font-weight:800!important;line-height:1.35!important;color:#102f49!important;margin:0!important}
+    .wishlist-page .wishlist-location{font-size:1rem!important;color:#5d7385!important;margin:0!important}
+    .wishlist-page .wishlist-price{font-size:1.45rem!important;font-weight:800!important;color:#0c5f86!important;margin:.15rem 0 .35rem!important}
+
+    .wishlist-page .wishlist-detail-btn,.wishlist-page .wishlist-remove-btn{min-height:44px!important;border-radius:11px!important;font-weight:700!important}
+    .wishlist-page .wishlist-detail-btn{border:none!important;color:#fff!important;background:linear-gradient(135deg,#0d6fa0,#125b83)!important}
+    .wishlist-page .wishlist-remove-btn{border:1px solid #e3a0a9!important;background:#fff!important;color:#b43a48!important}
+    .wishlist-page .wishlist-remove-btn:hover{background:#fff2f4!important}
+
+    @@media (max-width: 767.98px){
+        .wishlist-page .wishlist-head{flex-direction:column;align-items:flex-start!important;gap:.75rem}
+        .wishlist-page .wishlist-media-wrap{height:190px!important}
+    }
+</style>
+
+<div class="container py-4 wishlist-page">
+    <div class="wishlist-head d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Tour yêu thích của bạn</h2>
+        <a href="/tours" class="btn wishlist-explore-btn">Khám phá thêm tour</a>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">Bạn chưa lưu tour nào vào wishlist.</div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                var tour = item.IdTourNavigation;
+                <div class="col-md-6 col-lg-4">
+                    <article class="wishlist-card h-100">
+                        <div class="wishlist-media-wrap">
+                            <img src="@Url.Content("~/img/tours/" + (tour?.HinhAnh ?? "hero1.jpg"))" class="wishlist-media" alt="@(tour?.TenTour ?? "Tour")" />
+                            <span class="wishlist-badge"><i class="fas fa-heart"></i> Đã lưu</span>
+                        </div>
+                        <div class="wishlist-body d-flex flex-column">
+                            <h5 class="wishlist-title">@(tour?.TenTour ?? "Tour")</h5>
+                            <p class="wishlist-location mb-2"><i class="fas fa-map-marker-alt"></i> @(tour?.DiaDiem ?? "Đang cập nhật")</p>
+                            <p class="wishlist-price mb-3">@string.Format("{0:N0} đ", tour?.GiaKhuyenMai ?? 0)</p>
+                            <div class="mt-auto d-flex gap-2">
+                                <a class="btn wishlist-detail-btn flex-fill" href="/Tour/ChiTiet/@item.IdTour">Xem chi tiết</a>
+                                <form asp-action="Remove" asp-controller="Wishlist" method="post" class="flex-fill">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="idWishlist" value="@item.IdWishlist" />
+                                    <button type="submit" class="btn wishlist-remove-btn w-100">Xóa</button>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    }
+</div>

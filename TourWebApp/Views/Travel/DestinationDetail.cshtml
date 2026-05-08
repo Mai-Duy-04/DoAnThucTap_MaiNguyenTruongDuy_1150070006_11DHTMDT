@@ -1,0 +1,57 @@
+﻿@model TravelDestinationDetailViewModel
+@{
+    ViewData["Title"] = "Chi tiết điểm đến";
+    var destination = Model.Item;
+}
+
+<main>
+    <section class="page-hero" style="background-image: url('@destination.ImageUrl');">
+        <div class="page-hero-overlay"></div>
+        <div class="container travel-container">
+            <span class="section-kicker">Điểm đến HappyTrip</span>
+            <h1>@destination.Name</h1>
+            <p>@destination.Country - Từ @destination.PriceFrom.ToString("N0")đ</p>
+        </div>
+    </section>
+
+    <section class="travel-section">
+        <div class="container travel-container">
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <article class="detail-panel reveal">
+                        <h2>@destination.Name có gì nổi bật?</h2>
+                        <p>@destination.Description</p>
+                        <ul class="detail-list">
+                            <li>Nhóm điểm đến: @destination.Category</li>
+                            <li>Khu vực: @destination.Country</li>
+                            <li>Mức giá tham khảo: từ @destination.PriceFrom.ToString("N0")đ</li>
+                        </ul>
+                    </article>
+                </div>
+                <div class="col-lg-4">
+                    <aside class="detail-panel reveal">
+                        <h3>Bạn muốn đi @destination.Name?</h3>
+                        <p>Gửi yêu cầu để HappyTrip tư vấn lịch trình, thời gian đi và chi phí phù hợp.</p>
+                        <div class="detail-actions">
+                            <a class="btn travel-btn travel-btn-primary" href="/contact">Nhận tư vấn</a>
+                            <a class="btn travel-btn travel-btn-outline detail-outline" href="/destinations">Xem điểm đến khác</a>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="travel-section section-cream">
+        <div class="container travel-container">
+            <partial name="~/Views/Shared/TravelComponents/_SectionHeading.cshtml"
+                     model='new SectionHeadingModel { Kicker = "Gợi ý thêm", Title = "Điểm đến liên quan", Description = "Tham khảo thêm một số điểm đến đang được khách HappyTrip quan tâm.", AlignClass = "text-center" }' />
+            <div class="destination-grid mt-4">
+                @foreach (var related in Model.RelatedDestinations)
+                {
+                    <partial name="~/Views/Shared/TravelComponents/_DestinationCard.cshtml" model="related" />
+                }
+            </div>
+        </div>
+    </section>
+</main>

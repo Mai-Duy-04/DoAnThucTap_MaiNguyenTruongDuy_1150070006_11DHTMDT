@@ -1,0 +1,13 @@
+@model CtaSectionModel
+
+<section class="final-cta" style="background-image: url('@Model.BackgroundImageUrl');">
+    <div class="final-cta-overlay"></div>
+    <div class="container travel-container final-cta-content">
+        <h2>@Model.Title</h2>
+        <p>@Model.Subtitle</p>
+        <div class="hero-actions">
+            <a href="@Model.PrimaryButtonUrl" class="btn travel-btn travel-btn-primary">@Model.PrimaryButtonText</a>
+            <a href="@Model.SecondaryButtonUrl" class="btn travel-btn travel-btn-outline">@Model.SecondaryButtonText</a>
+        </div>
+    </div>
+</section>

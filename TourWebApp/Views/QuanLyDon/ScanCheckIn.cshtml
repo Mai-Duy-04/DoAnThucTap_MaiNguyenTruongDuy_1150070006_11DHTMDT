@@ -1,0 +1,30 @@
+@model TourWebApp.Data.Models.DonDatTour
+@{
+    ViewData["Title"] = "Scan check-in";
+    Layout = "_Layout";
+}
+
+<div class="container py-4" style="max-width:900px;">
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <h3 class="mb-3">Xác nhận check-in</h3>
+            <p class="text-muted mb-4">Thông tin đơn được quét từ QR.</p>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6"><strong>Mã đơn:</strong> @Model.MaBooking</div>
+                <div class="col-md-6"><strong>Khách hàng:</strong> @Model.IdTaiKhoanNavigation?.HoTen</div>
+                <div class="col-md-6"><strong>Tour:</strong> @Model.IdTourNavigation?.TenTour</div>
+                <div class="col-md-6"><strong>Ngày đặt:</strong> @Model.NgayDat.ToString("dd/MM/yyyy HH:mm")</div>
+                <div class="col-md-6"><strong>Trạng thái:</strong> @Model.TrangThai</div>
+                <div class="col-md-6"><strong>Đã thanh toán:</strong> @(Model.DaThanhToan ? "Có" : "Chưa")</div>
+            </div>
+
+            <form asp-action="XacNhanCheckIn" asp-controller="QuanLyDon" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="idDon" value="@Model.IdDon" />
+                <button type="submit" class="btn btn-success">Xác nhận check-in</button>
+                <a asp-action="ChiTiet" asp-controller="QuanLyDon" asp-route-id="@Model.IdDon" class="btn btn-outline-secondary ms-2">Xem chi tiết đơn</a>
+            </form>
+        </div>
+    </div>
+</div>

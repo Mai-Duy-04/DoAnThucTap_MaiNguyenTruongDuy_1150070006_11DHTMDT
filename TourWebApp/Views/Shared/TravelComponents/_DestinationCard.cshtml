@@ -1,0 +1,39 @@
+﻿@model DestinationItem
+
+@{
+    var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+    var wishlistDestinationSlugs = ViewBag.WishlistDestinationSlugs as HashSet<string>;
+    var isWishlisted = wishlistDestinationSlugs?.Contains(Model.Slug) == true;
+}
+
+<article class="tour-card-modern tour-list-card shadow-lg rounded-4 overflow-hidden h-100 w-100 d-flex flex-column">
+    <div class="position-relative tour-list-image-wrap" style="height:165px; overflow:hidden;">
+        <form asp-controller="Wishlist"
+              asp-action="ToggleByDestination"
+              method="post"
+              class="position-absolute top-0 start-0 m-2"
+              style="z-index:3;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="destinationSlug" value="@Model.Slug" />
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+            <button type="submit"
+                    class="btn btn-sm rounded-circle @(isWishlisted ? "btn-danger" : "btn-light")"
+                    title="@(isWishlisted ? "Bỏ khỏi yêu thích" : "Thêm vào yêu thích")"
+                    aria-label="@(isWishlisted ? "Bỏ khỏi yêu thích" : "Thêm vào yêu thích")">
+                <i class="@(isWishlisted ? "fas" : "far") fa-heart"></i>
+            </button>
+        </form>
+        <img src="@Model.ImageUrl" alt="Điểm đến @Model.Name" class="w-100 h-100 tour-list-image" style="object-fit:cover; border-radius:10px;" loading="lazy" />
+    </div>
+
+    <div class="p-3 d-flex flex-column gap-2 flex-grow-1 tour-list-body">
+        <p class="tour-list-tag">@Model.Country</p>
+        <h4 class="fw-bold tour-list-title">@Model.Name</h4>
+        <p class="tour-list-desc">@Model.Description</p>
+
+        <div class="tour-list-footer d-flex align-items-center justify-content-between mt-auto">
+            <p class="tour-price mb-0">Từ <strong>@Model.PriceFrom.ToString("N0")đ</strong></p>
+            <a href="/destinations/@Model.Slug" class="tour-link-detail">Xem chi tiết</a>
+        </div>
+    </div>
+</article>

@@ -1,48 +1,89 @@
-@model List<TourWebApp.Data.Models.DonDatTour>
+﻿@model List<TourWebApp.Data.Models.DonDatTour>
 @{
     ViewData["Title"] = "Đơn của tôi";
+    var totalOrders = Model?.Count ?? 0;
+    var pendingOrders = Model?.Count(x => x.TrangThai == "ChoThanhToan") ?? 0;
+    var paidOrders = Model?.Count(x => x.TrangThai == "ThanhToanThanhCong") ?? 0;
 }
 
-<h3 class="mb-4">📦 Đơn đặt tour của tôi</h3>
+<link rel="stylesheet" href="~/css/account-dashboard.css" asp-append-version="true" />
 
-@if (!Model.Any())
-{
-    <p>Bạn chưa có đơn nào.</p>
-}
-else
-{
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Mã đơn</th>
-                <th>Tour</th>
-                <th>Ngày đi</th>
-                <th>Số khách</th>
-                <th>Tổng tiền</th>
-                <th>Trạng thái</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var d in Model)
-            {
-                <tr>
-                    <td>@d.MaBooking</td>
-                    <td>@d.IdTourNavigation.TenTour</td>
-                    <td>@d.IdLichNavigation.NgayKhoiHanh.ToString("dd/MM/yyyy")</td>
-                    <td>@(d.NguoiLon + d.TreEm + d.TreNho)</td>
-                    <td class="text-danger fw-bold">@d.TongTien.ToString("N0") đ</td>
-                    <td>
-                        <span class="badge bg-info">@d.TrangThai</span>
-                    </td>
-                    <td>
-                        <a class="btn btn-sm btn-primary"
-                           href="/TaiKhoan/ChiTietDon?idDon=@d.IdDon">
-                           Xem
-                        </a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+<div class="account-dashboard-page">
+    <div class="account-dashboard-shell">
+        <aside class="account-dashboard-sidebar">
+            <div class="account-user-chip">
+                <div class="account-user-avatar">@((Context.Session.GetString("HoTen") ?? "U").Trim().Substring(0, 1).ToUpper())</div>
+                <div>
+                    <p class="account-user-kicker">Quản lý đơn hàng</p>
+                    <h2>@(Context.Session.GetString("HoTen") ?? "Khách hàng")</h2>
+                    <p class="account-user-email">Theo dõi trạng thái booking</p>
+                </div>
+            </div>
+
+            <nav class="account-dashboard-nav" aria-label="Điều hướng tài khoản">
+                <a href="/TaiKhoan/HoSo">Hồ sơ cá nhân</a>
+                <a href="/TaiKhoan/DonCuaToi" class="is-active">Đơn của tôi</a>
+            </nav>
+
+            <div class="account-quick-stats">
+                <article><span>Tổng đơn</span><strong>@totalOrders</strong></article>
+                <article><span>Chờ thanh toán</span><strong>@pendingOrders</strong></article>
+                <article><span>Đã thanh toán</span><strong>@paidOrders</strong></article>
+            </div>
+        </aside>
+
+        <section class="account-dashboard-main">
+            <div class="account-panel account-orders-panel">
+                <div class="account-panel-head">
+                    <h3>Đơn đặt tour của tôi</h3>
+                    <p>Lịch sử booking và trạng thái xử lý mới nhất.</p>
+                </div>
+
+                @if (Model == null || !Model.Any())
+                {
+                    <div class="account-empty-order">Bạn chưa có đơn nào.</div>
+                }
+                else
+                {
+                    <div class="account-order-grid">
+                        @foreach (var d in Model)
+                        {
+                            var guestCount = d.NguoiLon + d.TreEm + d.TreNho;
+                            var finalAmount = d.TongTienSauGiam ?? (d.TongTien - (d.SoTienGiam ?? 0));
+                            if (finalAmount < 0) { finalAmount = 0; }
+
+                            <article class="account-order-card">
+                                <div class="account-order-top">
+                                    <div>
+                                        <p class="account-order-code">Mã đơn: <strong>@d.MaBooking</strong></p>
+                                        <h5>@d.IdTourNavigation?.TenTour</h5>
+                                    </div>
+                                    <span class="account-status @d.TrangThai">@d.TrangThai</span>
+                                </div>
+
+                                <div class="account-order-meta">
+                                    <span><i class="fa-regular fa-calendar"></i> Ngày đặt: @d.NgayDat.ToString("dd/MM/yyyy HH:mm")</span>
+                                    <span><i class="fa-regular fa-compass"></i> Khởi hành: @(d.IdLichNavigation?.NgayKhoiHanh.ToString("dd/MM/yyyy") ?? "Chưa có")</span>
+                                    <span><i class="fa-solid fa-users"></i> @guestCount khách</span>
+                                    <span class="amount"><i class="fa-solid fa-wallet"></i> @finalAmount.ToString("N0") đ</span>
+                                    @if (!string.IsNullOrWhiteSpace(d.MaPhieuGiamGia))
+                                    {
+                                        <span><i class="fa-solid fa-ticket"></i> Mã: @d.MaPhieuGiamGia</span>
+                                    }
+                                </div>
+
+                                <div class="account-order-actions">
+                                    <a class="account-btn-view" href="/TaiKhoan/ChiTietDon?idDon=@d.IdDon">Xem chi tiết</a>
+                                    @if (d.TrangThai == "ChoThanhToan")
+                                    {
+                                        <a class="account-btn-extend" href="/DatTour/GiaHanThanhToan?idDon=@d.IdDon">Gia hạn 5 phút</a>
+                                    }
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+</div>

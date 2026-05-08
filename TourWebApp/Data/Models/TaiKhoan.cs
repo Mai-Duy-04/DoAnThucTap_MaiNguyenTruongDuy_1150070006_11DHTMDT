@@ -38,4 +38,13 @@ public partial class TaiKhoan
 
     [InverseProperty("IdTaiKhoanNavigation")]
     public virtual ICollection<DonDatTour> DonDatTours { get; set; } = new List<DonDatTour>();
+
+    [InverseProperty("IdTaiKhoanNavigation")]
+    public virtual ICollection<PhieuGiamGiaSuDung> PhieuGiamGiaSuDungs { get; set; } = new List<PhieuGiamGiaSuDung>();
+
+    [InverseProperty("IdTaiKhoanNavigation")]
+    public virtual ICollection<PhieuGiamGiaTaiKhoan> PhieuGiamGiaTaiKhoans { get; set; } = new List<PhieuGiamGiaTaiKhoan>();
+
+    [InverseProperty("IdTaiKhoanNavigation")]
+    public virtual ICollection<WishlistTour> WishlistTours { get; set; } = new List<WishlistTour>();
 }

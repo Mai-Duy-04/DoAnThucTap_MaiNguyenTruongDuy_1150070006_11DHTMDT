@@ -1,0 +1,16 @@
+@model HeroModel
+
+<section class="hero-section" style="background-image: url('@Model.BackgroundImageUrl');">
+    <div class="hero-overlay"></div>
+    <div class="container travel-container hero-content">
+        <h1>@Model.Title</h1>
+        <p>@Model.Subtitle</p>
+        <div class="hero-actions">
+            <a href="@Model.PrimaryButtonUrl" class="btn travel-btn travel-btn-primary">@Model.PrimaryButtonText</a>
+            <a href="@Model.SecondaryButtonUrl" class="btn travel-btn travel-btn-outline">@Model.SecondaryButtonText</a>
+        </div>
+        <div class="scroll-indicator">
+            <span></span>
+        </div>
+    </div>
+</section>

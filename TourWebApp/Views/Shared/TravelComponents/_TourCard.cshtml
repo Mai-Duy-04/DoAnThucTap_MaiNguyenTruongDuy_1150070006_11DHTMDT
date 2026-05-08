@@ -1,0 +1,20 @@
+﻿@model TourPackageItem
+
+<article class="tour-card reveal">
+    <div class="tour-media">
+        <img src="@Model.ImageUrl" alt="Tour @Model.Name" loading="lazy" />
+        <span class="tour-badge">@Model.Category</span>
+    </div>
+    <div class="tour-body">
+        <h3>@Model.Name</h3>
+        <div class="tour-meta">
+            <span><i class="fa-regular fa-clock"></i> @Model.Duration</span>
+            <span><i class="fa-solid fa-star"></i> @Model.Rating.ToString("0.0")/5</span>
+        </div>
+        <p>@Model.Description</p>
+        <div class="tour-footer">
+            <div class="tour-price">@Model.Price.ToString("N0")đ</div>
+            <a href="/tours/@Model.Slug" class="btn travel-btn travel-btn-primary">Xem chi tiết</a>
+        </div>
+    </div>
+</article>

@@ -1,43 +1,52 @@
-@model TourWebApp.Models.ViewModels.NhapThongTinVM
+﻿@model TourWebApp.Models.ViewModels.NhapThongTinVM
 @{
     var user = Context.Session.GetInt32("IdTaiKhoan") != null
         ? (TourWebApp.Data.Models.TaiKhoan)ViewBag.User
         : null;
+    var dsMaPhieuDaLuu = ViewBag.DanhSachMaPhieuDaLuu as List<string> ?? new List<string>();
 }
 
-<div class="container mt-4">
+<div class="container mt-4 mb-5">
     <h3 class="mb-4 fw-bold">Đặt tour: @Model.TenTour</h3>
 
-    <!-- THÔNG TIN TOUR -->
-    <div class="card mb-4 p-3">
-        <div class="row">
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-warning">@TempData["Error"]</div>
+    }
+
+    <div class="card mb-4 p-3 shadow-sm border-0">
+        <div class="row g-3 align-items-center">
             <div class="col-md-6">
-                <p><strong>Ngày khởi hành:</strong> @Model.NgayKhoiHanh.ToString("dd/MM/yyyy")</p>
+                <p class="mb-1"><strong>Ngày khởi hành:</strong> @Model.NgayKhoiHanh.ToString("dd/MM/yyyy")</p>
+                <p class="mb-0"><strong>Tổng khách:</strong> @Model.TongKhach</p>
             </div>
-            <div class="col-md-6">
-                <p><strong>Tổng khách:</strong> @Model.TongKhach</p>
-                <p><strong>Tổng tiền:</strong> @Model.TongTien.ToString("#,##0") đ</p>
+            <div class="col-md-6 text-md-end">
+                <div><strong>Tổng tiền tạm tính:</strong> @Model.TongTien.ToString("N0") đ</div>
+                @if (Model.SoTienGiam > 0)
+                {
+                    <div><strong>Giảm giá:</strong> -@Model.SoTienGiam.ToString("N0") đ</div>
+                    <div class="text-danger fs-5 fw-bold">Cần thanh toán: @Model.TongTienSauGiam.ToString("N0") đ</div>
+                }
             </div>
         </div>
     </div>
 
     <form asp-action="TaoDonVaChuyenSangThanhToan" method="post">
+        @Html.AntiForgeryToken()
 
-        <!-- ẨN ID TOUR & ID LỊCH -->
-        <input type="hidden" name="IdTour" value="@Model.IdTour" />
-        <input type="hidden" name="IdLich" value="@Model.IdLich" />
+        <input type="hidden" asp-for="IdTour" />
+        <input type="hidden" asp-for="IdLich" />
+        <input type="hidden" asp-for="GiaNguoiLon" />
+        <input type="hidden" asp-for="GiaTreEm" />
+        <input type="hidden" asp-for="GiaEmBe" />
+        <input type="hidden" asp-for="TongTien" />
 
-        <!-- ẨN GIÁ — RẤT QUAN TRỌNG -->
-        <input type="hidden" name="GiaNguoiLon" value="@Model.GiaNguoiLon" />
-        <input type="hidden" name="GiaTreEm" value="@Model.GiaTreEm" />
-        <input type="hidden" name="GiaEmBe" value="@Model.GiaEmBe" />
-        <input type="hidden" name="TongTien" value="@Model.TongTien" />
-
-        <div class="card p-4 shadow-sm">
+        <div class="card p-4 shadow-sm border-0">
             <h5 class="fw-bold mb-3">Thông tin khách hàng</h5>
 
-            <div class="row">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
 
+            <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Họ tên *</label>
                     <input type="text" name="HoTen" class="form-control" value="@user?.HoTen" required />
@@ -53,43 +62,81 @@
                     <input type="email" name="Email" class="form-control" value="@user?.Email" />
                 </div>
 
-                <hr />
+                <div class="col-md-6 mb-3">
+                    <label asp-for="MaPhieuGiamGia" class="form-label">Mã phiếu giảm giá</label>
+                    <input asp-for="MaPhieuGiamGia" class="form-control" placeholder="Nhập mã, VD: HAPPY20" style="text-transform:uppercase" list="savedVoucherList" />
+                    <datalist id="savedVoucherList">
+                        @foreach (var ma in dsMaPhieuDaLuu)
+                        {
+                            <option value="@ma"></option>
+                        }
+                    </datalist>
+                    <span asp-validation-for="MaPhieuGiamGia" class="text-danger small"></span>
+                    <div class="small mt-1">
+                        <a href="/TaiKhoan/KhoPhieuGiamGia" target="_blank">Mở kho voucher của tôi</a>
+                    </div>
+                    @if (dsMaPhieuDaLuu.Any())
+                    {
+                        <div class="small text-muted mt-1">Đã lưu @dsMaPhieuDaLuu.Count mã voucher. Bấm để gợi ý nhanh.</div>
+                    }
+                </div>
 
-                <!-- SỐ LƯỢNG KHÁCH -->
-                <h6 class="fw-bold mt-3">Số lượng khách</h6>
+                <hr class="my-3" />
+
+                <h6 class="fw-bold mt-2">Số lượng khách</h6>
 
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">Người lớn</label>
-                    <input type="number" name="NguoiLon" class="form-control"
-                        value="@Model.NguoiLon" min="1" required />
+                    <label asp-for="NguoiLon" class="form-label">Người lớn</label>
+                    <input asp-for="NguoiLon" type="number" class="form-control" min="1" required />
                 </div>
 
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">Trẻ em</label>
-                    <input type="number" name="TreEm" class="form-control"
-                        value="@Model.TreEm" min="0" />
+                    <label asp-for="TreEm" class="form-label">Trẻ em</label>
+                    <input asp-for="TreEm" type="number" class="form-control" min="0" />
                 </div>
 
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">Em bé</label>
-                    <input type="number" name="EmBe" class="form-control"
-                        value="@Model.EmBe" min="0" />
+                    <label asp-for="EmBe" class="form-label">Em bé</label>
+                    <input asp-for="EmBe" type="number" class="form-control" min="0" />
                 </div>
 
                 <div class="col-12 mb-3">
-                    <label class="form-label">Ghi chú</label>
-                    <textarea name="GhiChu" class="form-control" rows="3"></textarea>
+                    <label asp-for="GhiChu" class="form-label">Ghi chú</label>
+                    <textarea asp-for="GhiChu" class="form-control" rows="3"></textarea>
                 </div>
 
+                <div class="col-12 mb-3">
+                    <label asp-for="PhuongThucThanhToan" class="form-label">Hình thức thanh toán</label>
+                    <select asp-for="PhuongThucThanhToan" class="form-select">
+                        <option value="VNPAY">VNPAY (online)</option>
+                        <option value="TienMat">Tiền mặt (xác nhận sau)</option>
+                    </select>
+                    <div class="form-text">Tiền mặt sẽ được tạo đơn chờ xác nhận thu tiền, không chuyển đến cổng thanh toán.</div>
+                </div>
+
+                <div class="col-12">
+                    <div class="alert alert-light border d-flex justify-content-between align-items-center mb-0">
+                        <div>
+                            <div><strong>Tạm tính:</strong> @Model.TongTien.ToString("N0") đ</div>
+                            <div><strong>Giảm giá:</strong> @Model.SoTienGiam.ToString("N0") đ</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="small text-muted">Tổng thanh toán dự kiến</div>
+                            <div class="text-danger fs-5 fw-bold">@Model.TongTienSauGiam.ToString("N0") đ</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="text-end">
-                <button class="btn btn-primary px-4 py-2">
-                    Tiếp tục thanh toán →
+            <div class="text-end mt-4">
+                <button class="btn btn-primary px-4 py-2" type="submit">
+                    Tiếp tục thanh toán ->
                 </button>
             </div>
-
         </div>
-
     </form>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

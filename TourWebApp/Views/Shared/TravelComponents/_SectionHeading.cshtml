@@ -1,0 +1,13 @@
+@model SectionHeadingModel
+
+<div class="section-heading @Model.AlignClass">
+    @if (!string.IsNullOrWhiteSpace(Model.Kicker))
+    {
+        <span class="section-kicker">@Model.Kicker</span>
+    }
+    <h2>@Model.Title</h2>
+    @if (!string.IsNullOrWhiteSpace(Model.Description))
+    {
+        <p>@Model.Description</p>
+    }
+</div>

@@ -23,6 +23,8 @@ public partial class DonDatTour
 
     public int IdLich { get; set; }
 
+    public int? IdPhieuGiamGia { get; set; }
+
     public int NguoiLon { get; set; }
 
     public int TreEm { get; set; }
@@ -34,6 +36,15 @@ public partial class DonDatTour
 
     [Column(TypeName = "decimal(18, 0)")]
     public decimal TongTien { get; set; }
+
+    [StringLength(50)]
+    public string? MaPhieuGiamGia { get; set; }
+
+    [Column(TypeName = "decimal(18, 0)")]
+    public decimal? SoTienGiam { get; set; }
+
+    [Column(TypeName = "decimal(18, 0)")]
+    public decimal? TongTienSauGiam { get; set; }
 
     [StringLength(30)]
     public string TrangThai { get; set; } = null!;
@@ -54,6 +65,10 @@ public partial class DonDatTour
     [InverseProperty("DonDatTours")]
     public virtual LichKhoiHanh IdLichNavigation { get; set; } = null!;
 
+    [ForeignKey("IdPhieuGiamGia")]
+    [InverseProperty("DonDatTours")]
+    public virtual PhieuGiamGia? IdPhieuGiamGiaNavigation { get; set; }
+
     [ForeignKey("IdTaiKhoan")]
     [InverseProperty("DonDatTours")]
     public virtual TaiKhoan IdTaiKhoanNavigation { get; set; } = null!;
@@ -64,4 +79,7 @@ public partial class DonDatTour
 
     [InverseProperty("IdDonNavigation")]
     public virtual ICollection<ThongBao> ThongBaos { get; set; } = new List<ThongBao>();
+
+    [InverseProperty("IdDonNavigation")]
+    public virtual ICollection<PhieuGiamGiaSuDung> PhieuGiamGiaSuDungs { get; set; } = new List<PhieuGiamGiaSuDung>();
 }

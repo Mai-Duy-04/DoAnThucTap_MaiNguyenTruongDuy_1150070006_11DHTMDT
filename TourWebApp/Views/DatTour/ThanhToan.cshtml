@@ -1,71 +1,207 @@
 @model TourWebApp.Data.Models.DonDatTour
+@{
+    var tongGoc = Model.TongTien;
+    var soTienGiam = Model.SoTienGiam ?? 0;
+    var tongCanThanhToan = Model.TongTienSauGiam ?? (tongGoc - soTienGiam);
+    if (tongCanThanhToan < 0) { tongCanThanhToan = 0; }
 
-<div class="container mt-4">
-    <h3 class="fw-bold mb-3">Thanh toán đơn #@Model.MaBooking</h3>
+    var laThanhToanTaiQuay = string.Equals(Model.PhuongThucTT, "TienMat", StringComparison.OrdinalIgnoreCase);
+    var tongKhach = Model.NguoiLon + Model.TreEm + Model.TreNho;
+    var anhTour = Model.IdTourNavigation?.HinhAnh;
+    var tenTour = Model.IdTourNavigation?.TenTour ?? "Tour đang cập nhật";
+    var diaDiem = Model.IdTourNavigation?.DiaDiem ?? "Đang cập nhật";
+    var ngayKhoiHanh = Model.IdLichNavigation?.NgayKhoiHanh;
+    var anhTourSrc = string.Empty;
+    if (!string.IsNullOrWhiteSpace(anhTour))
+    {
+        if (anhTour.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            anhTourSrc = anhTour;
+        }
+        else
+        {
+            var cleaned = anhTour.Trim();
+            if (cleaned.StartsWith("~/", StringComparison.Ordinal) || cleaned.StartsWith("/", StringComparison.Ordinal))
+            {
+                anhTourSrc = Url.Content(cleaned.StartsWith("~/", StringComparison.Ordinal) ? cleaned : "~" + cleaned);
+            }
+            else if (cleaned.Contains('/'))
+            {
+                anhTourSrc = Url.Content("~/" + cleaned.TrimStart('/'));
+            }
+            else
+            {
+                // Keep the same image convention as Tour/ChiTiet: ~/img/tours/{fileName}
+                anhTourSrc = Url.Content("~/img/tours/" + cleaned);
+            }
+        }
+    }
+}
 
-    <div class="row">
+<style>
+    :root {
+        --travel-green: #24382f;
+        --travel-moss: #6f7d6b;
+        --travel-cream: #f5f0e8;
+        --travel-sand: #d8c3a5;
+        --travel-brown: #5f4b3f;
+        --travel-text: #1f2933;
+        --travel-muted: #6b7280;
+        --travel-white: #ffffff;
+        --travel-danger: #dc2626;
+        --travel-border: #e6ded2;
+    }
 
-        <!-- Cột trái -->
-        <div class="col-md-6">
-            <div class="card p-3 mb-3 shadow-sm">
-                <h5 class="fw-bold">Thông tin đơn hàng</h5>
+    .travel-pay-wrap {
+        max-width: 1140px;
+        margin: 1.5rem auto 1.75rem;
+        padding: 0 .75rem;
+        color: var(--travel-text);
+    }
 
-                <p><strong>Tour:</strong> @Model.IdTourNavigation.TenTour</p>
-                <p><strong>Ngày khởi hành:</strong> 
-                    @Model.IdLichNavigation.NgayKhoiHanh.ToString("dd/MM/yyyy")
-                </p>
+    .travel-page-head {
+        background: rgba(111, 125, 107, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(8px);
+        border-radius: 22px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        color: var(--travel-white);
+    }
 
-                <p><strong>Số khách:</strong> 
-                    @Model.NguoiLon người lớn, 
-                    @Model.TreEm trẻ em,
-                    @Model.TreNho em bé
-                </p>
+    .travel-pay-grid { --bs-gutter-x: 2.1rem; --bs-gutter-y: 1.4rem; }
+    .travel-card {
+        background: var(--travel-cream);
+        border: 1px solid var(--travel-border);
+        border-radius: 22px;
+        padding: 1.5rem;
+        box-shadow: 0 12px 28px rgba(36, 56, 47, 0.08);
+    }
+    .travel-card.white { background: var(--travel-white); }
+    .travel-title { font-size: clamp(1.45rem, 2vw, 1.95rem); font-weight: 700; letter-spacing: .01em; }
+    .travel-muted { color: var(--travel-muted); }
+    .travel-badge {
+        display: inline-flex; align-items: center; gap: .45rem;
+        background: #e9efe9; color: var(--travel-green);
+        border: 1px solid #cbd8cc; padding: .4rem .7rem; border-radius: 999px;
+        font-size: .85rem; font-weight: 600;
+    }
+    .tour-thumb { width: 100%; height: 185px; object-fit: cover; border-radius: 16px; border: 1px solid var(--travel-border); display: block; }
+    .travel-kv { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem 1rem; margin-top: 1rem; }
+    .travel-kv-item { background: rgba(255,255,255,.58); border: 1px solid var(--travel-border); border-radius: 14px; padding: .75rem .85rem; }
+    .travel-kv-item small { color: var(--travel-muted); display: block; margin-bottom: .2rem; }
+    .travel-divider { border: 0; border-top: 1px solid var(--travel-border); margin: 1.2rem 0; }
+    .amount-row { display: flex; justify-content: space-between; margin-bottom: .5rem; }
+    .amount-total { font-size: 2rem; font-weight: 800; color: var(--travel-danger); letter-spacing: .02em; }
+    .countdown-chip {
+        margin-top: 1rem; background: #f4ebdd; border: 1px solid var(--travel-border); border-left: 4px solid var(--travel-sand);
+        border-radius: 14px; padding: .75rem .9rem; font-weight: 600; color: var(--travel-brown);
+    }
+    .secure-note { border: 1px dashed var(--travel-border); border-radius: 14px; padding: .65rem .8rem; color: var(--travel-muted); font-size: .92rem; }
+    .travel-btn-main {
+        background: var(--travel-green); color: #fff; border: 0; border-radius: 12px; font-weight: 600;
+        padding: .72rem 1.1rem; transition: all .2s ease;
+    }
+    .travel-btn-main:hover { background: #1d2f27; color: #fff; transform: translateY(-1px); box-shadow: 0 10px 18px rgba(36,56,47,.2); }
+    .travel-btn-soft { border-radius: 12px; border-color: var(--travel-border); color: var(--travel-brown); }
+    .travel-btn-soft:hover { background: #f1e7da; border-color: #d6c2a6; color: #4c3b31; }
+    @@media (min-width: 1200px) {
+        .travel-card { padding: 1.25rem; }
+        .travel-page-head { padding: 1rem 1.25rem; margin-bottom: 1.2rem; }
+    }
 
-                <p><strong>Tổng khách:</strong> @(Model.NguoiLon + Model.TreEm + Model.TreNho)</p>
+    @@media (max-width: 991.98px) { .travel-kv { grid-template-columns: 1fr; } }
+</style>
 
-                <p class="mt-3"><strong>Tổng tiền:</strong> 
-                    <span class="text-danger fw-bold">
-                        @Model.TongTien.ToString("N0") đ
-                    </span>
-                </p>
+<div class="travel-pay-wrap">
+    <div class="travel-page-head d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <p class="mb-1 opacity-75">Premium eco tourism booking</p>
+            <h1 class="travel-title mb-0">Thanh toán đơn #@Model.MaBooking</h1>
+        </div>
+        <span class="travel-badge"><i class="bi bi-hourglass-split"></i> Đang chờ thanh toán</span>
+    </div>
 
-                <p><strong>Hạn thanh toán:</strong> 
-                    @Model.HanThanhToan?.ToString("HH:mm • dd/MM/yyyy")
-                </p>
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success rounded-4">@TempData["Success"]</div>
+    }
+    @if (TempData["Info"] != null)
+    {
+        <div class="alert alert-info rounded-4">@TempData["Info"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-warning rounded-4">@TempData["Error"]</div>
+    }
 
-                <div class="alert alert-warning mt-3">
-                    Thời gian còn lại: 
-                    <strong><span id="countdown"></span></strong>
+    <div class="row travel-pay-grid">
+        <div class="col-lg-7">
+            <section class="travel-card h-100">
+                <img src="@(!string.IsNullOrWhiteSpace(anhTourSrc) ? anhTourSrc : Url.Content("~/img/logo.svg"))" alt="@tenTour" class="tour-thumb mb-3" loading="lazy" onerror="this.onerror=null;this.src='@Url.Content("~/img/logo.svg")';this.style.objectFit='contain';this.style.background='#f3f4f6';" />
+                <h4 class="fw-bold mb-1">@tenTour</h4>
+                <p class="travel-muted mb-3">Hành trình nghỉ dưỡng của bạn đã được giữ chỗ. Hoàn tất thanh toán để xác nhận chỗ ngay.</p>
+
+                <div class="travel-kv">
+                    <div class="travel-kv-item"><small><i class="bi bi-calendar-event me-1"></i> Ngày khởi hành</small><strong>@(ngayKhoiHanh?.ToString("dd/MM/yyyy") ?? "Đang cập nhật")</strong></div>
+                    <div class="travel-kv-item"><small><i class="bi bi-geo-alt me-1"></i> Địa điểm</small><strong>@diaDiem</strong></div>
+                    <div class="travel-kv-item"><small><i class="bi bi-people me-1"></i> Số khách</small><strong>@tongKhach khách (@Model.NguoiLon NL, @Model.TreEm TE, @Model.TreNho EB)</strong></div>
+                    <div class="travel-kv-item"><small><i class="bi bi-ticket-perforated me-1"></i> Mã đặt chỗ</small><strong>@Model.MaBooking</strong></div>
                 </div>
-            </div>
+
+                <div class="countdown-chip">⏳ Giữ chỗ của bạn trong: <span id="countdown">--:--</span></div>
+            </section>
         </div>
 
-        <!-- Cột phải: QR -->
-        <div class="col-md-6">
-            <div class="card p-3 shadow-sm text-center">
-
-                <h5 class="fw-bold mb-3">Quét QR để thanh toán</h5>
-
-                <div class="qr-frame shadow p-3 rounded"
-                     style="background:white; width:360px; margin:auto; border:1px solid #e0e0e0;">
-
-                    <img src="~/img/qr/qr-vietqr.png"
-                         class="img-fluid"
-                         style="width:100%; border-radius:12px;" />
-
+        <div class="col-lg-5">
+            <section class="travel-card white mb-3">
+                <h5 class="fw-bold mb-3">Lựa chọn thanh toán</h5>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="travel-badge">@(laThanhToanTaiQuay ? "Đang ở chế độ hỗ trợ giữ chỗ" : "Thanh toán online ngay")</span>
+                    <span class="travel-badge"><i class="bi bi-clock-history"></i> Hạn: @Model.HanThanhToan?.ToString("HH:mm dd/MM")</span>
                 </div>
 
-                <p class="mt-3">Nội dung chuyển khoản:</p>
-                <p class="fw-bold text-primary">HappyTrip @Model.MaBooking</p>
+                @if (!laThanhToanTaiQuay)
+                {
+                    <form asp-action="ChuyenSangThanhToanTaiQuay" asp-controller="DatTour" method="post" class="mb-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idDon" value="@Model.IdDon" />
+                        <button class="btn travel-btn-soft w-100" type="submit">Cần hỗ trợ giữ chỗ thủ công</button>
+                    </form>
+                }
+                else
+                {
+                    <form asp-action="ChuyenSangThanhToanOnline" asp-controller="DatTour" method="post" class="mb-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idDon" value="@Model.IdDon" />
+                        <button class="btn travel-btn-soft w-100" type="submit">Quay lại thanh toán online ngay</button>
+                    </form>
+                }
 
-                <button onclick="location.href='/DatTour/XacNhanThanhToan?idDon=@Model.IdDon'"
-                        class="btn btn-success mt-3 px-4">
-                    Tôi đã thanh toán xong
-                </button>
+                @if (laThanhToanTaiQuay)
+                {
+                    <div class="secure-note">
+                        <i class="bi bi-headset me-1"></i> Bạn đang ở chế độ <strong>hỗ trợ giữ chỗ thủ công</strong>. Hệ thống sẽ giữ chỗ tạm thời, nhân viên sẽ liên hệ xác nhận và hướng dẫn thanh toán phù hợp.
+                    </div>
+                    <p class="travel-muted mt-2 mb-0" style="font-size:.9rem;">Để xác nhận nhanh hơn, bạn nên quay lại thanh toán online trước hạn.</p>
+                }
+                else
+                {
+                    <div class="secure-note mb-3"><i class="bi bi-shield-lock me-1"></i> Thanh toán bảo mật bởi VNPAY</div>
+                    <form asp-action="ThanhToanVnpay" asp-controller="DatTour" method="post" class="mb-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idDon" value="@Model.IdDon" />
+                        <button class="btn travel-btn-main w-100" type="submit">Thanh toán qua VNPAY</button>
+                    </form>
+                }
 
-            </div>
+                <hr class="travel-divider" />
+                <div class="amount-row"><span class="travel-muted">Tổng tiền gốc</span><strong>@tongGoc.ToString("N0") đ</strong></div>
+                <div class="amount-row"><span class="travel-muted">Giảm giá</span><strong>-@soTienGiam.ToString("N0") đ</strong></div>
+                <div class="amount-row align-items-end mb-0"><span class="fw-semibold">Cần thanh toán</span><span class="amount-total">@tongCanThanhToan.ToString("N0") đ</span></div>
+            </section>
         </div>
-
     </div>
 </div>
 

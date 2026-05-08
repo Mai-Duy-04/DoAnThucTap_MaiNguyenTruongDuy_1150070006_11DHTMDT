@@ -1,0 +1,44 @@
+﻿@model TravelDestinationsViewModel
+@{
+    ViewData["Title"] = "Điểm đến";
+}
+
+<main>
+    <section class="page-hero page-hero-destinations">
+        <div class="page-hero-overlay"></div>
+        <div class="container travel-container">
+            <span class="section-kicker">Điểm đến</span>
+            <h1>Chọn nơi bạn muốn đi cùng HappyTrip</h1>
+            <p>Từ biển đảo, phố núi đến miền sông nước, mỗi hành trình đều có lịch trình rõ ràng và dễ đi.</p>
+        </div>
+    </section>
+
+    <section class="travel-section">
+        <div class="container travel-container">
+            <div class="filter-chips">
+                @foreach (var filter in Model.Filters)
+                {
+                    var activeClass = string.Equals(filter, Model.SelectedFilter, StringComparison.OrdinalIgnoreCase) ? "chip-active" : "";
+                    <a class="filter-chip @activeClass" href="/destinations?filter=@filter">@filter</a>
+                }
+            </div>
+
+            @if (Model.Items.Count == 0)
+            {
+                <div class="empty-state">
+                    <h3>Chưa có điểm đến phù hợp bộ lọc này.</h3>
+                    <p>Hãy chọn nhóm khác để xem thêm gợi ý.</p>
+                </div>
+            }
+            else
+            {
+                <div class="destination-grid mt-4">
+                    @foreach (var item in Model.Items)
+                    {
+                        <partial name="~/Views/Shared/TravelComponents/_DestinationCard.cshtml" model="item" />
+                    }
+                </div>
+            }
+        </div>
+    </section>
+</main>

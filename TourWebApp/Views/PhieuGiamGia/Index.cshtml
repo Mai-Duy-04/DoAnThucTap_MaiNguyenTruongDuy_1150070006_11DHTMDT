@@ -1,0 +1,140 @@
+﻿@model List<TourWebApp.Data.Models.PhieuGiamGia>
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Phiếu giảm giá";
+    var trangThai = (ViewBag.TrangThai as string ?? "tatca").ToLowerInvariant();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Quản lý phiếu giảm giá</h3>
+        <p class="text-muted mb-0">Tạo, cập nhật và theo dõi lượt sử dụng mã giảm giá.</p>
+    </div>
+    <a class="btn btn-success" asp-action="Create">
+        <i class="fa-solid fa-plus me-1"></i> Tạo phiếu mới
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-warning">@TempData["Error"]</div>
+}
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-sm-3">
+        <select class="form-select" name="trangThai">
+            <option value="tatca" selected="@(trangThai == "tatca")">Tất cả</option>
+            <option value="active" selected="@(trangThai == "active")">Đang hoạt động</option>
+            <option value="inactive" selected="@(trangThai == "inactive")">Ngừng hoạt động</option>
+        </select>
+    </div>
+    <div class="col-sm-2">
+        <button class="btn btn-primary w-100">Lọc</button>
+    </div>
+</form>
+
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã phiếu</th>
+                    <th>Tên phiếu</th>
+                    <th>Loại giảm</th>
+                    <th>Giá trị</th>
+                    <th>Phạm vi</th>
+                    <th>Hiệu lực</th>
+                    <th>Lượt dùng</th>
+                    <th>Trạng thái</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model == null || !Model.Any())
+                {
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">Chưa có phiếu giảm giá nào.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var p in Model)
+                    {
+                        var loaiGiam = p.LoaiGiam == "PhanTram" ? "Phần trăm" : "Tiền mặt";
+                        var giaTri = p.LoaiGiam == "PhanTram"
+                            ? $"{p.GiaTriGiam:N0}%"
+                            : $"{p.GiaTriGiam:N0} đ";
+
+                        var phamVi = p.PhamViApDung;
+                        if (p.PhamViApDung == "Tour" && p.IdTourNavigation != null)
+                        {
+                            phamVi = $"Tour: {p.IdTourNavigation.TenTour}";
+                        }
+                        else if (p.PhamViApDung == "LoaiTour" && p.IdLoaiTourNavigation != null)
+                        {
+                            phamVi = $"Loại: {p.IdLoaiTourNavigation.TenLoai}";
+                        }
+
+                        <tr>
+                            <td><strong>@p.MaPhieu</strong></td>
+                            <td>
+                                <div class="fw-semibold">@p.TenPhieu</div>
+                                @if (!string.IsNullOrWhiteSpace(p.MoTa))
+                                {
+                                    <div class="text-muted small">@p.MoTa</div>
+                                }
+                            </td>
+                            <td>@loaiGiam</td>
+                            <td>
+                                <div>@giaTri</div>
+                                @if (p.GiamToiDa.HasValue && p.GiamToiDa.Value > 0)
+                                {
+                                    <div class="small text-muted">Tối đa: @p.GiamToiDa.Value.ToString("N0") đ</div>
+                                }
+                            </td>
+                            <td>@phamVi</td>
+                            <td>
+                                <div>TỪ: @(p.NgayBatDau?.ToString("dd/MM/yyyy HH:mm") ?? "--")</div>
+                                <div>ĐẾN: @(p.NgayKetThuc?.ToString("dd/MM/yyyy HH:mm") ?? "--")</div>
+                            </td>
+                            <td>
+                                @p.DaSuDung / @(p.TongLuotSuDung?.ToString() ?? "Không giới hạn")
+                            </td>
+                            <td>
+                                @if (p.TrangThai)
+                                {
+                                    <span class="badge bg-success">Hoạt động</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Tạm khóa</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <a asp-action="Edit" asp-route-id="@p.IdPhieuGiamGia" class="btn btn-sm btn-outline-primary me-1">
+                                    Sửa
+                                </a>
+                                <form asp-action="DoiTrangThai" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@p.IdPhieuGiamGia" />
+                                    <button class="btn btn-sm btn-outline-warning me-1" type="submit">
+                                        @(p.TrangThai ? "Tạm khóa" : "Kích hoạt")
+                                    </button>
+                                </form>
+                                <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Xóa phiếu này?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@p.IdPhieuGiamGia" />
+                                    <button class="btn btn-sm btn-outline-danger" type="submit">Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

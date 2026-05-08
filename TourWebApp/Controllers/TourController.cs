@@ -1,6 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using TourWebApp.Data.Models;
+using System.Text.RegularExpressions;
 
 namespace TourWebApp.Controllers
 {
@@ -13,16 +15,45 @@ namespace TourWebApp.Controllers
             _db = db;
         }
 
-        // TÁCH SỐ NGÀY TRONG CHUỖI "3N2Đ"
+        // Tach so ngay tu chuoi thoi gian, ho tro "3N2D", "10N9D", "7 ngay 6 dem"...
         private int ExtractNgay(string? thoiGian)
         {
-            if (string.IsNullOrEmpty(thoiGian)) return 0;
-            if (char.IsDigit(thoiGian[0]))
-                return int.Parse(thoiGian[0].ToString());
+            if (string.IsNullOrWhiteSpace(thoiGian)) return 0;
+
+            var match = Regex.Match(thoiGian, "\\d+");
+            if (match.Success && int.TryParse(match.Value, out var soNgay))
+                return soNgay;
+
             return 0;
         }
 
-        // LỊCH GẦN NHẤT
+        private decimal? ParseMoney(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return null;
+
+            var digitsOnly = new string(raw.Where(char.IsDigit).ToArray());
+            if (string.IsNullOrWhiteSpace(digitsOnly)) return null;
+
+            if (decimal.TryParse(digitsOnly, out var value))
+                return value;
+
+            return null;
+        }
+
+        private DateOnly? ParseNgayDi(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return null;
+
+            if (DateOnly.TryParse(raw, out var dateOnly))
+                return dateOnly;
+
+            if (DateTime.TryParse(raw, out var dateTime))
+                return DateOnly.FromDateTime(dateTime);
+
+            return null;
+        }
+
+        // Lich gan nhat
         private LichKhoiHanh? GetNextLich(int idTour)
         {
             return _db.LichKhoiHanhs
@@ -33,23 +64,28 @@ namespace TourWebApp.Controllers
                 .FirstOrDefault();
         }
 
-       public IActionResult TatCa(
-        string? diadiem,
-        int? songay,
-        decimal? giamin,
-        decimal? giamax,
-        string? sort,
-        int page = 1)
+        public IActionResult TatCa(
+            string? diadiem,
+            string? ngaydi,
+            int? songay,
+            string? giamin,
+            string? giamax,
+            string? phuongtien,
+            int? idLoaiTour,
+            bool? concho,
+            string? sort,
+            int page = 1)
         {
             int pageSize = 4;
+            var today = DateOnly.FromDateTime(DateTime.Today);
 
             var query = _db.Tours
                 .Where(t => t.TrangThai == true)
                 .AsQueryable();
 
-            // === SEARCH ĐỊA ĐIỂM ===
-           if (!string.IsNullOrWhiteSpace(diadiem))
-{
+            // Search dia diem
+            if (!string.IsNullOrWhiteSpace(diadiem))
+            {
                 string keyword = diadiem.Trim().ToLower();
 
                 query = query.Where(t =>
@@ -58,32 +94,80 @@ namespace TourWebApp.Controllers
                 );
             }
 
-            // === FILTER SỐ NGÀY ===
-            if (songay.HasValue && songay > 0)
+            // Filter ngay di
+            var ngayDiParsed = ParseNgayDi(ngaydi);
+            if (ngayDiParsed.HasValue)
             {
-                query = query.AsEnumerable()
-                            .Where(t => ExtractNgay(t.ThoiGian) == songay)
-                            .AsQueryable();
+                var nd = ngayDiParsed.Value;
+                query = query.Where(t =>
+                    _db.LichKhoiHanhs.Any(l =>
+                        l.IdTour == t.IdTour &&
+                        l.NgayKhoiHanh == nd));
             }
 
-            // === FILTER GIÁ ===
-            if (giamin.HasValue) query = query.Where(t => t.GiaKhuyenMai >= giamin);
-            if (giamax.HasValue) query = query.Where(t => t.GiaKhuyenMai <= giamax);
-
-            // === SORT ===
-            switch (sort)
+            // Filter phuong tien
+            if (!string.IsNullOrWhiteSpace(phuongtien))
             {
-                case "gia_tang": query = query.OrderBy(t => t.GiaKhuyenMai); break;
-                case "gia_giam": query = query.OrderByDescending(t => t.GiaKhuyenMai); break;
-                case "ten": query = query.OrderBy(t => t.TenTour); break;
-                default: query = query.OrderByDescending(t => t.LuotXem); break;
+                string pt = phuongtien.Trim().ToLower();
+                query = query.Where(t =>
+                    t.PhuongTien != null &&
+                    t.PhuongTien.ToLower().Contains(pt));
             }
 
-            // === PHÂN TRANG ===
-            int totalItems = query.Count();
+            // Filter loai tour
+            if (idLoaiTour.HasValue && idLoaiTour.Value > 0)
+            {
+                query = query.Where(t => t.IdLoaiTour == idLoaiTour.Value);
+            }
+
+            // Filter con cho
+            if (concho == true)
+            {
+                query = query.Where(t =>
+                    _db.LichKhoiHanhs.Any(l =>
+                        l.IdTour == t.IdTour &&
+                        l.NgayKhoiHanh >= today &&
+                        l.SoChoConLai > 0));
+            }
+
+            // Filter ngan sach
+            var giaMin = ParseMoney(giamin);
+            var giaMax = ParseMoney(giamax);
+
+            if (giaMin.HasValue)
+                query = query.Where(t => (t.GiaKhuyenMai ?? t.GiaGoc ?? 0) >= giaMin.Value);
+
+            if (giaMax.HasValue)
+                query = query.Where(t => (t.GiaKhuyenMai ?? t.GiaGoc ?? 0) <= giaMax.Value);
+
+            // Lo ve memory de filter so ngay tu chuoi thoi gian
+            var filteredTours = query.ToList();
+
+            if (songay.HasValue && songay.Value > 0)
+            {
+                filteredTours = filteredTours
+                    .Where(t => ExtractNgay(t.ThoiGian) == songay.Value)
+                    .ToList();
+            }
+
+            // Sort
+            filteredTours = (sort ?? string.Empty) switch
+            {
+                "gia_tang" => filteredTours.OrderBy(t => t.GiaKhuyenMai ?? t.GiaGoc ?? decimal.MaxValue).ToList(),
+                "gia_giam" => filteredTours.OrderByDescending(t => t.GiaKhuyenMai ?? t.GiaGoc ?? 0).ToList(),
+                "ten" => filteredTours.OrderBy(t => t.TenTour).ToList(),
+                _ => filteredTours.OrderByDescending(t => t.LuotXem).ToList()
+            };
+
+            if (page < 1) page = 1;
+
+            // Phan trang
+            int totalItems = filteredTours.Count;
             int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+            if (totalPages == 0) totalPages = 1;
+            if (page > totalPages) page = totalPages;
 
-            var tours = query
+            var tours = filteredTours
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
@@ -91,16 +175,42 @@ namespace TourWebApp.Controllers
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages = totalPages;
 
+            ViewBag.LoaiTours = _db.LoaiTours.OrderBy(x => x.TenLoai).ToList();
+            ViewBag.PhuongTienList = _db.Tours
+                .Where(t => t.TrangThai && t.PhuongTien != null && t.PhuongTien.Trim() != "")
+                .Select(t => t.PhuongTien!.Trim())
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+
             ViewBag.LichGanNhat = tours.ToDictionary(
                 t => t.IdTour,
                 t => GetNextLich(t.IdTour)
             );
 
+            var idTaiKhoan = HttpContext.Session.GetInt32("IdTaiKhoan");
+            ViewBag.WishlistIds = new HashSet<int>();
+
+            if (idTaiKhoan.HasValue)
+            {
+                try
+                {
+                    ViewBag.WishlistIds = _db.WishlistTours
+                        .Where(x => x.IdTaiKhoan == idTaiKhoan.Value)
+                        .Select(x => x.IdTour)
+                        .ToHashSet();
+                }
+                catch (SqlException ex) when (ex.Number == 208)
+                {
+                    ViewBag.WishlistIds = new HashSet<int>();
+                }
+            }
+
             return View(tours);
         }
 
 
-        // TOUR THEO LOẠI
+        // TOUR THEO LOAI
         public IActionResult TheoLoai(int id)
         {
             var loai = _db.LoaiTours.FirstOrDefault(l => l.IdLoaiTour == id);
@@ -137,7 +247,7 @@ namespace TourWebApp.Controllers
             return Json(results);
         }
 
-        // CHI TIẾT TOUR
+        // CHI TIET TOUR
         public IActionResult ChiTiet(int id, string? sortCmt)
         {
             var tour = _db.Tours
@@ -149,23 +259,23 @@ namespace TourWebApp.Controllers
             if (tour == null)
                 return NotFound();
 
-            // +1 lượt xem
+            // +1 luot xem
             tour.LuotXem++;
             _db.SaveChanges();
 
-            // LỊCH GẦN NHẤT
+            // LICH GAN NHAT
             ViewBag.LichGanNhat = _db.LichKhoiHanhs
                 .Where(l => l.IdTour == id)
                 .OrderBy(l => l.NgayKhoiHanh)
                 .ThenBy(l => l.GioKhoiHanh)
                 .FirstOrDefault();
 
-            // GIÁ TỪ CS CSDL – KHÔNG LẤY PHỤ THU
+            // GIA TU CSDL
             ViewBag.GiaNguoiLon = tour.TourGiaChiTiets.FirstOrDefault(x => x.DoiTuong == "Người lớn");
-            ViewBag.GiaTreEm    = tour.TourGiaChiTiets.FirstOrDefault(x => x.DoiTuong == "Trẻ em");
-            ViewBag.GiaEmBe     = tour.TourGiaChiTiets.FirstOrDefault(x => x.DoiTuong == "Em bé");
+            ViewBag.GiaTreEm = tour.TourGiaChiTiets.FirstOrDefault(x => x.DoiTuong == "Trẻ em");
+            ViewBag.GiaEmBe = tour.TourGiaChiTiets.FirstOrDefault(x => x.DoiTuong == "Em bé");
 
-            // TOUR LIÊN QUAN
+            // TOUR LIEN QUAN
             ViewBag.TourLienQuan = _db.Tours
                 .Where(t => t.IdLoaiTour == tour.IdLoaiTour && t.IdTour != id)
                 .OrderByDescending(t => t.LuotXem)
@@ -187,7 +297,26 @@ namespace TourWebApp.Controllers
             ViewBag.BinhLuanCount = binhLuans.Count;
             ViewBag.SortCmt = sortCmt;
 
-        return View(tour);
+            var idTaiKhoan = HttpContext.Session.GetInt32("IdTaiKhoan");
+            ViewBag.WishlistIds = new HashSet<int>();
+
+            if (idTaiKhoan.HasValue)
+            {
+                try
+                {
+                    ViewBag.WishlistIds = _db.WishlistTours
+                        .Where(x => x.IdTaiKhoan == idTaiKhoan.Value)
+                        .Select(x => x.IdTour)
+                        .ToHashSet();
+                }
+                catch (SqlException ex) when (ex.Number == 208)
+                {
+                    // Bang WishlistTour chua duoc tao trong DB => bo qua de trang chi tiet van hien thi.
+                    ViewBag.WishlistIds = new HashSet<int>();
+                }
+            }
+
+            return View(tour);
         }
 
         [HttpPost]
@@ -228,7 +357,7 @@ namespace TourWebApp.Controllers
 
             return RedirectToAction("ChiTiet", new { id = idTour });
         }
-        
+
         public IActionResult Index()
         {
             return RedirectToAction("TatCa");

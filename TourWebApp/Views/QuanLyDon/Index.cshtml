@@ -1,12 +1,20 @@
-@model List<TourWebApp.Data.Models.DonDatTour>
+﻿@model List<TourWebApp.Data.Models.DonDatTour>
 @{
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 }
 
-<h3 class="fw-bold mb-4">📦 Quản lý đơn đặt tour</h3>
+<h3 class="fw-bold mb-4">Quản lý đơn đặt tour</h3>
 
-<!-- Bộ lọc -->
-<form method="get" class="mb-3">
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-warning">@TempData["Error"]</div>
+}
+
+<form method="get" class="mb-3 d-flex gap-2">
     <select name="trangThai" class="form-select w-auto d-inline-block">
         <option value="TatCa">Tất cả</option>
         <option value="ChoDuyet" selected="@(ViewBag.TrangThai=="ChoDuyet")">Chờ duyệt</option>
@@ -25,15 +33,19 @@
             <th>Khách hàng</th>
             <th>Tour</th>
             <th>Ngày đặt</th>
-            <th>Tiền</th>
+            <th>Tổng gốc</th>
+            <th>Tổng TT</th>
             <th>Trạng thái</th>
-            <th width="140">Thao tác</th>
+            <th width="160">Thao tác</th>
         </tr>
     </thead>
 
     <tbody>
         @foreach (var d in Model)
         {
+            var tongThanhToan = d.TongTienSauGiam ?? (d.TongTien - (d.SoTienGiam ?? 0));
+            if (tongThanhToan < 0) { tongThanhToan = 0; }
+
             <tr>
                 <td>@d.MaBooking</td>
                 <td>@d.IdTaiKhoanNavigation.HoTen</td>
@@ -41,42 +53,45 @@
                 <td>@d.NgayDat.ToString("dd/MM/yyyy")</td>
                 <td>@String.Format("{0:#,0}đ", d.TongTien)</td>
                 <td>
-                        @* Ưu tiên trạng thái THANH TOÁN *@
-                        @if (d.DaThanhToan)
-                        {
-                            <span class="badge bg-success">Đã thanh toán</span>
-                        }
-                        else if (d.TrangThai == "DaHuy")
-                        {
-                            <span class="badge bg-danger">Đã hủy</span>
-                        }
-                        else if (d.HanThanhToan != null && d.HanThanhToan < DateTime.Now)
-                        {
-                            <span class="badge bg-secondary">Hết hạn thanh toán</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-warning text-dark">Chờ thanh toán</span>
-                        }
+                    @String.Format("{0:#,0}đ", tongThanhToan)
+                    @if (!string.IsNullOrWhiteSpace(d.MaPhieuGiamGia))
+                    {
+                        <div class="small text-success">@d.MaPhieuGiamGia</div>
+                    }
+                </td>
+                <td>
+                    @if (d.DaThanhToan)
+                    {
+                        <span class="badge bg-success">Đã thanh toán</span>
+                    }
+                    else if (d.TrangThai == "DaHuy")
+                    {
+                        <span class="badge bg-danger">Đã hủy</span>
+                    }
+                    else if (d.HanThanhToan != null && d.HanThanhToan < DateTime.Now)
+                    {
+                        <span class="badge bg-secondary">Hết hạn thanh toán</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">Chờ thanh toán</span>
+                    }
                 </td>
 
                 <td>
-                    <a asp-action="ChiTiet" asp-route-id="@d.IdDon" class="btn btn-primary btn-sm">
-                        Xem
-                    </a>
-                    @if (!d.DaThanhToan)
-                        {
-                            <form asp-action="Xoa"
-                                method="post"
-                                class="d-inline"
-                                onsubmit="return confirm('Xóa đơn chưa thanh toán này?')">
+                    <a asp-action="ChiTiet" asp-route-id="@d.IdDon" class="btn btn-primary btn-sm">Xem</a>
 
-                                <input type="hidden" name="id" value="@d.IdDon" />
-                                <button class="btn btn-danger btn-sm">
-                                    Xóa
-                                </button>
-                            </form>
-                        }
+                    @if (!d.DaThanhToan)
+                    {
+                        <form asp-action="Xoa"
+                              method="post"
+                              class="d-inline"
+                              onsubmit="return confirm('Xóa đơn chưa thanh toán này?')">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@d.IdDon" />
+                            <button class="btn btn-danger btn-sm">Xóa</button>
+                        </form>
+                    }
                 </td>
             </tr>
         }
