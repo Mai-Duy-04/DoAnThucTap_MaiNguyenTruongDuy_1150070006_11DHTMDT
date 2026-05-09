@@ -28,6 +28,10 @@ namespace TourWebApp.Controllers
         {
             if (!IsAdmin()) return RedirectToAction("DangNhap", "TaiKhoan");
 
+            ViewBag.PendingCashCount = _context.DonDatTours.Count(d =>
+                d.TrangThai == BookingPaymentStatus.TrangThaiChoXacNhanTienMat
+                && !d.DaThanhToan);
+
             var query = _context.DonDatTours
                 .Include(d => d.IdTourNavigation)
                 .Include(d => d.IdTaiKhoanNavigation)

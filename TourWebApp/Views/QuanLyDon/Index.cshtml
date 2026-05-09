@@ -5,6 +5,18 @@
 
 <h3 class="fw-bold mb-4">Quản lý đơn đặt tour</h3>
 
+@{
+    var pendingCashCount = ViewBag.PendingCashCount as int? ?? 0;
+}
+
+@if (pendingCashCount > 0)
+{
+    <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+        <div><strong>@pendingCashCount</strong> đơn đang chờ admin xác nhận thủ công.</div>
+        <a class="btn btn-sm btn-primary" href="@Url.Action("Index", "QuanLyDon", new { trangThai = "ChoXacNhanTienMat" })">Xem ngay</a>
+    </div>
+}
+
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success">@TempData["Success"]</div>
