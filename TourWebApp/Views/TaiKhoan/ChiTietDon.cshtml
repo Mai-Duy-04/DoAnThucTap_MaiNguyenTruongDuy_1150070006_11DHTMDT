@@ -158,6 +158,15 @@
                 <section class="ticket-section">
                     <p class="ticket-section-tag">Actions</p>
                     <div class="ticket-actions">
+                        @if (trangThai == "ChoThanhToan" || trangThai == "ChoXacNhanTienMat")
+                        {
+                            <form asp-action="HuyDonTuKhach" asp-controller="DatTour" method="post" class="w-100 mb-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="idDon" value="@Model.IdDon" />
+                                <textarea name="lyDoHuy" class="form-control mb-2" rows="2" placeholder="Lý do hủy đơn (không bắt buộc)"></textarea>
+                                <button type="submit" class="ticket-btn ticket-btn-sand w-100" onclick="return confirm('Bạn chắc chắn muốn hủy đơn này?');">Hủy đơn</button>
+                            </form>
+                        }
                         @if (trangThai == "DaHuy" || trangThai == "HetHanThanhToan")
                         {
                             <a class="ticket-btn ticket-btn-sand" href="/DatTour/NhapThongTin?idTour=@idTour&idLich=@idLich&adult=@nguoiLon&child=@treEm&baby=@treNho">

@@ -22,6 +22,7 @@
         <option value="DaHuy" selected="@(ViewBag.TrangThai=="DaHuy")">Đã hủy</option>
         <option value="DaThanhToan" selected="@(ViewBag.TrangThai=="DaThanhToan")">Đã thanh toán</option>
         <option value="ChuaThanhToan" selected="@(ViewBag.TrangThai=="ChuaThanhToan")">Chưa thanh toán</option>
+        <option value="ChoXacNhanTienMat" selected="@(ViewBag.TrangThai=="ChoXacNhanTienMat")">Chờ xác nhận thủ công</option>
     </select>
     <button class="btn btn-primary">Lọc</button>
 </form>
@@ -67,6 +68,10 @@
                     else if (d.TrangThai == "DaHuy")
                     {
                         <span class="badge bg-danger">Đã hủy</span>
+                    }
+                    else if (d.TrangThai == "ChoXacNhanTienMat")
+                    {
+                        <span class="badge bg-info text-dark">Chờ xác nhận thủ công</span>
                     }
                     else if (d.HanThanhToan != null && d.HanThanhToan < DateTime.Now)
                     {

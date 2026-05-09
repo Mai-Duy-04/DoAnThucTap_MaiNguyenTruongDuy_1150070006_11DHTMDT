@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using TourWebApp.Data.Models;
+using TourWebApp.Models;
 
 namespace TourWebApp.Controllers
 {
@@ -49,6 +50,9 @@ namespace TourWebApp.Controllers
                     break;
                 case "ChuaThanhToan":
                     query = query.Where(d => d.DaThanhToan == false);
+                    break;
+                case "ChoXacNhanTienMat":
+                    query = query.Where(d => d.TrangThai == BookingPaymentStatus.TrangThaiChoXacNhanTienMat);
                     break;
             }
 
@@ -182,6 +186,64 @@ namespace TourWebApp.Controllers
             _context.SaveChanges();
 
             TempData["Success"] = "Da huy don.";
+            return RedirectToAction("ChiTiet", new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult XacNhanDonChoThuTienMat(int id)
+        {
+            if (!IsAdmin()) return RedirectToAction("DangNhap", "TaiKhoan");
+
+            var don = _context.DonDatTours
+                .Include(x => x.IdLichNavigation)
+                .Include(x => x.IdTourNavigation)
+                .FirstOrDefault(x => x.IdDon == id);
+            if (don == null) return NotFound();
+
+            if (don.DaThanhToan)
+            {
+                TempData["Info"] = "Don da duoc xac nhan thanh toan truoc do.";
+                return RedirectToAction("ChiTiet", new { id });
+            }
+
+            if (don.TrangThai == BookingPaymentStatus.TrangThaiDaHuy)
+            {
+                TempData["Error"] = "Don da huy, khong the xac nhan.";
+                return RedirectToAction("ChiTiet", new { id });
+            }
+
+            if (!string.Equals(don.PhuongThucTT, BookingPaymentStatus.PhuongThucTienMat, StringComparison.OrdinalIgnoreCase)
+                || don.TrangThai != BookingPaymentStatus.TrangThaiChoXacNhanTienMat)
+            {
+                TempData["Error"] = "Chi xac nhan duoc don dang o che do cho thu tien mat.";
+                return RedirectToAction("ChiTiet", new { id });
+            }
+
+            don.DaThanhToan = true;
+            don.TrangThai = BookingPaymentStatus.TrangThaiThanhToanThanhCong;
+            don.TrangThaiThanhToan = BookingPaymentStatus.TrangThaiTtThanhToanThanhCong;
+            don.NgayThanhToan = DateTime.Now;
+            don.PhuongThucTT = BookingPaymentStatus.PhuongThucTienMat;
+
+            if (don.IdPhieuGiamGia.HasValue)
+            {
+                var suDung = _context.PhieuGiamGiaSuDungs
+                    .Where(x => x.IdDon == don.IdDon && x.IdPhieuGiamGia == don.IdPhieuGiamGia.Value)
+                    .OrderByDescending(x => x.IdSuDung)
+                    .FirstOrDefault();
+
+                if (suDung != null && suDung.TrangThai != VoucherStatusUsed)
+                {
+                    suDung.TrangThai = VoucherStatusUsed;
+                    suDung.ThoiDiemSuDung = DateTime.Now;
+                    suDung.GhiChu = "Admin xac nhan thu tien mat";
+                }
+            }
+
+            _context.SaveChanges();
+
+            TempData["Success"] = "Da xac nhan don cho thu tien mat thanh cong.";
             return RedirectToAction("ChiTiet", new { id });
         }
 

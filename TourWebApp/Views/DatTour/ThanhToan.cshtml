@@ -197,6 +197,14 @@
                 }
 
                 <hr class="travel-divider" />
+                <form asp-action="HuyDonTuKhach" asp-controller="DatTour" method="post" class="mb-3">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="idDon" value="@Model.IdDon" />
+                    <label class="form-label fw-semibold mb-1" for="lyDoHuyThanhToan">Hủy đơn trước hạn</label>
+                    <textarea id="lyDoHuyThanhToan" name="lyDoHuy" class="form-control mb-2" rows="2" placeholder="Nhập lý do hủy (không bắt buộc)"></textarea>
+                    <button class="btn btn-outline-danger w-100" type="submit" onclick="return confirm('Bạn chắc chắn muốn hủy đơn này?');">Hủy đơn</button>
+                </form>
+
                 <div class="amount-row"><span class="travel-muted">Tổng tiền gốc</span><strong>@tongGoc.ToString("N0") đ</strong></div>
                 <div class="amount-row"><span class="travel-muted">Giảm giá</span><strong>-@soTienGiam.ToString("N0") đ</strong></div>
                 <div class="amount-row align-items-end mb-0"><span class="fw-semibold">Cần thanh toán</span><span class="amount-total">@tongCanThanhToan.ToString("N0") đ</span></div>
@@ -209,5 +217,28 @@
     <script src="~/js/countdown.js"></script>
     <script>
         startCountdown("@Model.HanThanhToan", "countdown");
+
+        (function () {
+            var laThanhToanTaiQuay = @laThanhToanTaiQuay.ToString().ToLowerInvariant();
+            if (!laThanhToanTaiQuay) return;
+
+            var idDon = @Model.IdDon;
+            var endpoint = '@Url.Action("KiemTraTrangThaiDon", "DatTour")' + '?idDon=' + idDon;
+            var pollingMs = 4000;
+
+            setInterval(function () {
+                fetch(endpoint, { method: 'GET', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function (res) { return res.ok ? res.json() : null; })
+                    .then(function (data) {
+                        if (!data || !data.ok) return;
+                        if (data.daThanhCong && data.redirectUrl) {
+                            window.location.href = data.redirectUrl;
+                        }
+                    })
+                    .catch(function () {
+                        // Keep silent and continue polling.
+                    });
+            }, pollingMs);
+        })();
     </script>
 }

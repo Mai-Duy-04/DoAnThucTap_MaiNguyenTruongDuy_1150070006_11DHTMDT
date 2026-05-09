@@ -394,6 +394,49 @@ namespace TourWebApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public IActionResult HuyDonTuKhach(int idDon, string? lyDoHuy)
+        {
+            int? userId = HttpContext.Session.GetInt32("IdTaiKhoan");
+            if (userId == null)
+            {
+                return RedirectToAction("DangNhap", "TaiKhoan", new { returnUrl = $"/DatTour/ThanhToan?idDon={idDon}" });
+            }
+
+            var don = _db.DonDatTours
+                .Include(t => t.IdLichNavigation)
+                .Include(t => t.IdTourNavigation)
+                .FirstOrDefault(t => t.IdDon == idDon && t.IdTaiKhoan == userId.Value);
+
+            if (don == null)
+            {
+                TempData["Error"] = "Don khong ton tai hoac ban khong co quyen thao tac.";
+                return RedirectToAction("DonCuaToi", "TaiKhoan");
+            }
+
+            if (don.DaThanhToan || don.TrangThai == BookingPaymentStatus.TrangThaiThanhToanThanhCong)
+            {
+                TempData["Error"] = "Don da thanh toan, khong the huy tu phia khach.";
+                return RedirectToAction("ChiTietDon", "TaiKhoan", new { idDon });
+            }
+
+            if (don.TrangThai == BookingPaymentStatus.TrangThaiDaHuy || don.TrangThaiThanhToan == BookingPaymentStatus.TrangThaiTtHetHanThanhToan)
+            {
+                TempData["Info"] = "Don da o trang thai huy/het han truoc do.";
+                return RedirectToAction("ChiTietDon", "TaiKhoan", new { idDon });
+            }
+
+            var lyDo = string.IsNullOrWhiteSpace(lyDoHuy) ? "Khach chu dong huy don" : lyDoHuy.Trim();
+            HuyDonQuaHan(don, $"{lyDo} (nguoi dung tu huy)");
+            don.NgayHuy = DateTime.Now;
+            _db.Entry(don).Property(x => x.NgayHuy).IsModified = true;
+            _db.SaveChanges();
+
+            TempData["Success"] = "Da huy don thanh cong.";
+            return RedirectToAction("ChiTietDon", "TaiKhoan", new { idDon });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult ChuyenSangThanhToanTaiQuay(int idDon)
         {
             int? userId = HttpContext.Session.GetInt32("IdTaiKhoan");
@@ -662,6 +705,34 @@ namespace TourWebApp.Controllers
             }
 
             return View(don);
+        }
+
+        [HttpGet]
+        public IActionResult KiemTraTrangThaiDon(int idDon)
+        {
+            int? userId = HttpContext.Session.GetInt32("IdTaiKhoan");
+            if (userId == null)
+            {
+                return Json(new { ok = false, needLogin = true });
+            }
+
+            var don = _db.DonDatTours
+                .FirstOrDefault(t => t.IdDon == idDon && t.IdTaiKhoan == userId.Value);
+
+            if (don == null)
+            {
+                return Json(new { ok = false, notFound = true });
+            }
+
+            var daThanhCong = don.DaThanhToan
+                && don.TrangThai == BookingPaymentStatus.TrangThaiThanhToanThanhCong;
+
+            return Json(new
+            {
+                ok = true,
+                daThanhCong,
+                redirectUrl = daThanhCong ? Url.Action("HoanTat", "DatTour", new { idDon = don.IdDon }) : null
+            });
         }
 
         private static bool DonDaHetHan(DonDatTour don)
