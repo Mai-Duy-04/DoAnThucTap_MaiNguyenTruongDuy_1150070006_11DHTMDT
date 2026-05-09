@@ -1,5 +1,11 @@
-﻿@{
+﻿@using TourWebApp.Data.Models
+@using TourWebApp.Models
+@inject ApplicationDbContext DbContext
+@{
     Layout = null;
+    var pendingCashCount = DbContext.DonDatTours.Count(d =>
+        d.TrangThai == BookingPaymentStatus.TrangThaiChoXacNhanTienMat && !d.DaThanhToan);
+    var pendingCashBadge = pendingCashCount > 9 ? "9+" : pendingCashCount.ToString();
 }
 
 <!DOCTYPE html>
@@ -55,8 +61,12 @@
                     <i class="fa-solid fa-calendar-days me-2"></i> Quản lý lịch khởi hành
                 </a>
             </li>
-            <li><a href="/QuanLyDon/Index">
-                <i class="fa-solid fa-file-invoice-dollar me-2"></i> Đơn đặt tour
+            <li><a href="/QuanLyDon/Index" class="d-flex align-items-center justify-content-between gap-2">
+                <span><i class="fa-solid fa-file-invoice-dollar me-2"></i> Đơn đặt tour</span>
+                @if (pendingCashCount > 0)
+                {
+                    <span class="badge rounded-pill bg-danger">@pendingCashBadge</span>
+                }
             </a></li>
 
             <li><a href="/QuanTri/NguoiDung"><i class="fa-solid fa-users me-2"></i> Tài khoản</a></li>
@@ -95,6 +105,7 @@
 
 
 </html>
+
 
 
 
