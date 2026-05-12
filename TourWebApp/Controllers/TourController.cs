@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using TourWebApp.Data.Models;
+using TourWebApp.Models.ViewModels;
 using System.Text.RegularExpressions;
 
 namespace TourWebApp.Controllers
@@ -361,6 +362,56 @@ namespace TourWebApp.Controllers
         public IActionResult Index()
         {
             return RedirectToAction("TatCa");
+        }
+
+        [HttpGet]
+        public IActionResult SoSanh(string? ids)
+        {
+            var parsedIds = (ids ?? string.Empty)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => int.TryParse(x, out var id) ? id : 0)
+                .Where(id => id > 0)
+                .Distinct()
+                .Take(4)
+                .ToList();
+
+            if (parsedIds.Count < 2)
+            {
+                TempData["Error"] = "Vui long chon it nhat 2 tour de so sanh.";
+                return RedirectToAction(nameof(TatCa));
+            }
+
+            var tours = _db.Tours
+                .Where(t => t.TrangThai && parsedIds.Contains(t.IdTour))
+                .Include(t => t.TourGiaChiTiets)
+                .ToList();
+
+            var lichMap = _db.LichKhoiHanhs
+                .Where(l => parsedIds.Contains(l.IdTour)
+                    && l.NgayKhoiHanh >= DateOnly.FromDateTime(DateTime.Today))
+                .GroupBy(l => l.IdTour)
+                .ToDictionary(g => g.Key, g => g.OrderBy(x => x.NgayKhoiHanh).ThenBy(x => x.GioKhoiHanh).FirstOrDefault());
+
+            var result = tours
+                .OrderBy(t => parsedIds.IndexOf(t.IdTour))
+                .Select(t => new TourCompareVM
+                {
+                    IdTour = t.IdTour,
+                    MaTour = t.MaTour,
+                    TenTour = t.TenTour,
+                    DiaDiem = t.DiaDiem,
+                    ThoiGian = t.ThoiGian,
+                    PhuongTien = t.PhuongTien,
+                    GiaNguoiLon = t.TourGiaChiTiets.FirstOrDefault(x => x.DoiTuong == "Người lớn")?.Gia
+                        ?? t.GiaKhuyenMai
+                        ?? t.GiaGoc,
+                    SoChoConLai = lichMap.TryGetValue(t.IdTour, out var lich) ? (lich?.SoChoConLai ?? 0) : 0,
+                    HinhAnh = t.HinhAnh,
+                    LuotXem = t.LuotXem
+                })
+                .ToList();
+
+            return View(result);
         }
     }
 }

@@ -1,0 +1,49 @@
+@model List<TourWebApp.Models.ViewModels.TourCompareVM>
+
+@{
+    ViewData["Title"] = "So sánh tour";
+}
+
+<link rel="stylesheet" href="~/css/tour-compare.css" />
+
+<div class="container py-4">
+    <h2 class="mb-3">So sánh tour</h2>
+
+    @if (Model == null || Model.Count < 2)
+    {
+        <div class="alert alert-warning">Cần ít nhất 2 tour để so sánh.</div>
+    }
+    else
+    {
+        <div class="table-responsive compare-table">
+            <table class="table table-bordered align-middle">
+                <tbody>
+                    <tr>
+                        <th>Ảnh</th>
+                        @foreach (var t in Model)
+                        {
+                            <td><img src="~/img/tours/@t.HinhAnh" alt="@t.TenTour" /></td>
+                        }
+                    </tr>
+                    <tr><th>Tên tour</th>@foreach (var t in Model){<td>@t.TenTour</td>}</tr>
+                    <tr><th>Mã tour</th>@foreach (var t in Model){<td>@t.MaTour</td>}</tr>
+                    <tr><th>Điểm đến</th>@foreach (var t in Model){<td>@t.DiaDiem</td>}</tr>
+                    <tr><th>Thời gian</th>@foreach (var t in Model){<td>@t.ThoiGian</td>}</tr>
+                    <tr><th>Phương tiện</th>@foreach (var t in Model){<td>@t.PhuongTien</td>}</tr>
+                    <tr><th>Giá người lớn</th>@foreach (var t in Model){<td>@((t.GiaNguoiLon ?? 0).ToString("N0"))đ</td>}</tr>
+                    <tr><th>Số chỗ còn</th>@foreach (var t in Model){<td>@t.SoChoConLai</td>}</tr>
+                    <tr><th>Lượt xem</th>@foreach (var t in Model){<td>@t.LuotXem</td>}</tr>
+                    <tr>
+                        <th>Hành động</th>
+                        @foreach (var t in Model)
+                        {
+                            <td>
+                                <a asp-controller="Tour" asp-action="ChiTiet" asp-route-id="@t.IdTour" class="btn btn-sm btn-primary">Xem chi tiết</a>
+                            </td>
+                        }
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -11,6 +11,7 @@
     var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
 }
 <link rel="stylesheet" href="~/css/tour-filter.css" />
+<link rel="stylesheet" href="~/css/tour-compare.css" />
 
 <div class="tours-container">
 <section class="tour-listing-page planner-filter-wrap mb-4">
@@ -162,6 +163,12 @@
                         Xem chi tiết
                     </a>
                 </div>
+
+                <button type="button"
+                        class="btn btn-outline-primary btn-sm mt-2 compare-toggle-btn"
+                        data-tour-id="@t.IdTour">
+                    Chọn so sánh
+                </button>
 
             </div>
 
@@ -325,4 +332,12 @@
     </div>
 }
 <script src="~/js/filter-slider.js"></script>
+<div id="compareBar" class="compare-bar" hidden>
+    <div class="compare-bar__content">
+        <span id="compareCount">0/4 tour</span>
+        <button type="button" id="compareNowBtn" class="btn btn-sm btn-primary" disabled>So sánh ngay</button>
+        <button type="button" id="clearCompareBtn" class="btn btn-sm btn-outline-secondary">Xóa</button>
+    </div>
+</div>
+<script src="~/js/compare-tour.js"></script>
 </div>
