@@ -6,44 +6,138 @@
 
 <link rel="stylesheet" href="~/css/tour-compare.css" />
 
-<div class="container py-4">
-    <h2 class="mb-3">So sánh tour</h2>
+<div class="cmp-page">
+
+    <div class="cmp-hero">
+        <div class="cmp-hero__left">
+            <p class="cmp-hero__eyebrow">COMPARE CENTER</p>
+            <h1 class="cmp-hero__title">So sánh tour</h1>
+            <p class="cmp-hero__subtitle">Đối chiếu giá, lịch trình, phương tiện và tình trạng chỗ của các tour đã chọn.</p>
+        </div>
+        <div class="cmp-hero__actions">
+            <button id="sortPriceBtn" type="button" class="cmp-btn cmp-btn--secondary">Sắp xếp giá</button>
+            <button id="sortViewBtn" type="button" class="cmp-btn cmp-btn--secondary">Sắp xếp lượt xem</button>
+            <button id="toggleSameRowsBtn" type="button" class="cmp-btn cmp-btn--primary">Ẩn dòng giống nhau</button>
+            <button id="copyCompareLinkBtn" type="button" class="cmp-btn cmp-btn--secondary">Copy link</button>
+        </div>
+    </div>
 
     @if (Model == null || Model.Count < 2)
     {
-        <div class="alert alert-warning">Cần ít nhất 2 tour để so sánh.</div>
+        <div class="cmp-empty">Cần ít nhất 2 tour để so sánh.</div>
     }
     else
     {
-        <div class="table-responsive compare-table">
-            <table class="table table-bordered align-middle">
-                <tbody>
-                    <tr>
-                        <th>Ảnh</th>
+        <div id="compareInsight" class="cmp-insights"></div>
+
+        <div class="cmp-matrix-card">
+            <div class="cmp-matrix-scroll">
+                <div class="cmp-matrix" id="tourCompareTable">
+
+                    <div class="cmp-matrix__row cmp-matrix__row--header" data-row-kind="header">
+                        <div class="cmp-matrix__label cmp-matrix__label--header"></div>
                         @foreach (var t in Model)
                         {
-                            <td><img src="~/img/tours/@t.HinhAnh" alt="@t.TenTour" /></td>
+                            <div class="cmp-matrix__col cmp-tour-header"
+                                 data-tour-id="@t.IdTour"
+                                 data-price="@(t.GiaNguoiLon ?? 0)"
+                                 data-views="@t.LuotXem"
+                                 data-seats="@t.SoChoConLai">
+                                <img class="cmp-tour-header__img"
+                                     src="~/img/tours/@t.HinhAnh"
+                                     alt="@t.TenTour" />
+                                <p class="cmp-tour-header__name">@t.TenTour</p>
+                                <p class="cmp-tour-header__meta">@t.DiaDiem &middot; @t.ThoiGian</p>
+                                <p class="cmp-tour-header__price">@((t.GiaNguoiLon ?? 0).ToString("N0"))đ</p>
+                            </div>
                         }
-                    </tr>
-                    <tr><th>Tên tour</th>@foreach (var t in Model){<td>@t.TenTour</td>}</tr>
-                    <tr><th>Mã tour</th>@foreach (var t in Model){<td>@t.MaTour</td>}</tr>
-                    <tr><th>Điểm đến</th>@foreach (var t in Model){<td>@t.DiaDiem</td>}</tr>
-                    <tr><th>Thời gian</th>@foreach (var t in Model){<td>@t.ThoiGian</td>}</tr>
-                    <tr><th>Phương tiện</th>@foreach (var t in Model){<td>@t.PhuongTien</td>}</tr>
-                    <tr><th>Giá người lớn</th>@foreach (var t in Model){<td>@((t.GiaNguoiLon ?? 0).ToString("N0"))đ</td>}</tr>
-                    <tr><th>Số chỗ còn</th>@foreach (var t in Model){<td>@t.SoChoConLai</td>}</tr>
-                    <tr><th>Lượt xem</th>@foreach (var t in Model){<td>@t.LuotXem</td>}</tr>
-                    <tr>
-                        <th>Hành động</th>
+                    </div>
+
+                    <div class="cmp-matrix__row" data-row-kind="text">
+                        <div class="cmp-matrix__label">Mã tour</div>
                         @foreach (var t in Model)
                         {
-                            <td>
-                                <a asp-controller="Tour" asp-action="ChiTiet" asp-route-id="@t.IdTour" class="btn btn-sm btn-primary">Xem chi tiết</a>
-                            </td>
+                            <div class="cmp-matrix__col">@t.MaTour</div>
                         }
-                    </tr>
-                </tbody>
-            </table>
+                    </div>
+
+                    <div class="cmp-matrix__row" data-row-kind="text">
+                        <div class="cmp-matrix__label">Điểm đến</div>
+                        @foreach (var t in Model)
+                        {
+                            <div class="cmp-matrix__col">@t.DiaDiem</div>
+                        }
+                    </div>
+
+                    <div class="cmp-matrix__row" data-row-kind="text">
+                        <div class="cmp-matrix__label">Thời gian</div>
+                        @foreach (var t in Model)
+                        {
+                            <div class="cmp-matrix__col">@t.ThoiGian</div>
+                        }
+                    </div>
+
+                    <div class="cmp-matrix__row" data-row-kind="text">
+                        <div class="cmp-matrix__label">Phương tiện</div>
+                        @foreach (var t in Model)
+                        {
+                            <div class="cmp-matrix__col">@t.PhuongTien</div>
+                        }
+                    </div>
+
+                    <div class="cmp-matrix__row" data-row-kind="numeric-low">
+                        <div class="cmp-matrix__label">Giá người lớn</div>
+                        @foreach (var t in Model)
+                        {
+                            <div class="cmp-matrix__col cmp-matrix__col--price" data-value="@(t.GiaNguoiLon ?? 0)">
+                                @((t.GiaNguoiLon ?? 0).ToString("N0"))đ
+                            </div>
+                        }
+                    </div>
+
+                    <div class="cmp-matrix__row" data-row-kind="numeric-high">
+                        <div class="cmp-matrix__label">Số chỗ còn</div>
+                        @foreach (var t in Model)
+                        {
+                            <div class="cmp-matrix__col" data-value="@t.SoChoConLai">
+                                @if (t.SoChoConLai <= 0)
+                                {
+                                    <span class="cmp-badge-danger">Hết chỗ</span>
+                                }
+                                else
+                                {
+                                    @t.SoChoConLai
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <div class="cmp-matrix__row" data-row-kind="numeric-high">
+                        <div class="cmp-matrix__label">Lượt xem</div>
+                        @foreach (var t in Model)
+                        {
+                            <div class="cmp-matrix__col" data-value="@t.LuotXem">@t.LuotXem</div>
+                        }
+                    </div>
+
+                    <div class="cmp-matrix__row cmp-matrix__row--action" data-row-kind="action">
+                        <div class="cmp-matrix__label">Hành động</div>
+                        @foreach (var t in Model)
+                        {
+                            <div class="cmp-matrix__col cmp-matrix__col--action">
+                                <a asp-controller="Tour" asp-action="ChiTiet" asp-route-id="@t.IdTour"
+                                   class="cmp-btn cmp-btn--primary">Xem chi tiết</a>
+                                <button type="button"
+                                        class="cmp-btn cmp-btn--danger remove-compare-item"
+                                        data-tour-id="@t.IdTour">Bỏ</button>
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            </div>
         </div>
     }
 </div>
+
+<script src="~/js/compare-result.js"></script>
