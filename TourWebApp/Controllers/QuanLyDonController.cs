@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using ClosedXML.Excel;
 using TourWebApp.Data.Models;
 using TourWebApp.Models;
 
@@ -24,7 +25,12 @@ namespace TourWebApp.Controllers
         private bool IsAdmin()
             => HttpContext.Session.GetString("VaiTro") == "Admin";
 
-        public IActionResult Index(string trangThai = "TatCa")
+        public IActionResult Index(
+            string trangThai = "TatCa",
+            DateTime? ngayDatTu = null,
+            DateTime? ngayDatDen = null,
+            string phuongThucTT = "TatCa",
+            string? tuKhoa = null)
         {
             if (!IsAdmin()) return RedirectToAction("DangNhap", "TaiKhoan");
 
@@ -32,36 +38,80 @@ namespace TourWebApp.Controllers
                 d.TrangThai == BookingPaymentStatus.TrangThaiChoXacNhanTienMat
                 && !d.DaThanhToan);
 
-            var query = _context.DonDatTours
-                .Include(d => d.IdTourNavigation)
-                .Include(d => d.IdTaiKhoanNavigation)
-                .OrderByDescending(d => d.NgayDat)
-                .AsQueryable();
-
-            switch (trangThai)
-            {
-                case "ChoDuyet":
-                    query = query.Where(d => d.TrangThai == "ChoDuyet");
-                    break;
-                case "DaDuyet":
-                    query = query.Where(d => d.TrangThai == "DaDuyet");
-                    break;
-                case "DaHuy":
-                    query = query.Where(d => d.TrangThai == "DaHuy");
-                    break;
-                case "DaThanhToan":
-                    query = query.Where(d => d.DaThanhToan == true);
-                    break;
-                case "ChuaThanhToan":
-                    query = query.Where(d => d.DaThanhToan == false);
-                    break;
-                case "ChoXacNhanTienMat":
-                    query = query.Where(d => d.TrangThai == BookingPaymentStatus.TrangThaiChoXacNhanTienMat);
-                    break;
-            }
+            var tuKhoaDaTrim = string.IsNullOrWhiteSpace(tuKhoa) ? null : tuKhoa.Trim();
+            var query = BuildOrderQuery(trangThai, ngayDatTu, ngayDatDen, phuongThucTT, tuKhoaDaTrim);
 
             ViewBag.TrangThai = trangThai;
+            ViewBag.NgayDatTu = ngayDatTu?.ToString("yyyy-MM-dd");
+            ViewBag.NgayDatDen = ngayDatDen?.ToString("yyyy-MM-dd");
+            ViewBag.PhuongThucTT = phuongThucTT;
+            ViewBag.TuKhoa = tuKhoaDaTrim ?? string.Empty;
             return View(query.ToList());
+        }
+
+        [HttpGet]
+        public IActionResult ExportExcel(
+            string trangThai = "TatCa",
+            DateTime? ngayDatTu = null,
+            DateTime? ngayDatDen = null,
+            string phuongThucTT = "TatCa",
+            string? tuKhoa = null)
+        {
+            if (!IsAdmin()) return RedirectToAction("DangNhap", "TaiKhoan");
+
+            var tuKhoaDaTrim = string.IsNullOrWhiteSpace(tuKhoa) ? null : tuKhoa.Trim();
+            var danhSachDon = BuildOrderQuery(trangThai, ngayDatTu, ngayDatDen, phuongThucTT, tuKhoaDaTrim)
+                .AsNoTracking()
+                .ToList();
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("DonDatTour");
+
+            worksheet.Cell(1, 1).Value = "STT";
+            worksheet.Cell(1, 2).Value = "Ma booking";
+            worksheet.Cell(1, 3).Value = "Khach hang";
+            worksheet.Cell(1, 4).Value = "Tour";
+            worksheet.Cell(1, 5).Value = "Ngay dat";
+            worksheet.Cell(1, 6).Value = "Phuong thuc TT";
+            worksheet.Cell(1, 7).Value = "Tong goc";
+            worksheet.Cell(1, 8).Value = "Tong thanh toan";
+            worksheet.Cell(1, 9).Value = "Trang thai";
+
+            var headerRange = worksheet.Range(1, 1, 1, 9);
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
+
+            for (var i = 0; i < danhSachDon.Count; i++)
+            {
+                var don = danhSachDon[i];
+                var row = i + 2;
+                var tongThanhToan = don.TongTienSauGiam ?? (don.TongTien - (don.SoTienGiam ?? 0));
+                if (tongThanhToan < 0) tongThanhToan = 0;
+
+                worksheet.Cell(row, 1).Value = i + 1;
+                worksheet.Cell(row, 2).Value = don.MaBooking;
+                worksheet.Cell(row, 3).Value = don.IdTaiKhoanNavigation.HoTen;
+                worksheet.Cell(row, 4).Value = don.IdTourNavigation.TenTour;
+                worksheet.Cell(row, 5).Value = don.NgayDat;
+                worksheet.Cell(row, 6).Value = don.PhuongThucTT ?? string.Empty;
+                worksheet.Cell(row, 7).Value = don.TongTien;
+                worksheet.Cell(row, 8).Value = tongThanhToan;
+                worksheet.Cell(row, 9).Value = GetTrangThaiHienThi(don);
+            }
+
+            worksheet.Column(5).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+            worksheet.Column(7).Style.NumberFormat.Format = "#,##0";
+            worksheet.Column(8).Style.NumberFormat.Format = "#,##0";
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            var fileName = $"DanhSachDon_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+            return File(
+                stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileName);
         }
 
         public IActionResult ChiTiet(int id)
@@ -282,6 +332,100 @@ namespace TourWebApp.Controllers
 
             TempData["Success"] = "Da xoa don chua thanh toan.";
             return RedirectToAction("Index");
+        }
+
+        private IQueryable<DonDatTour> BuildOrderQuery(
+            string trangThai,
+            DateTime? ngayDatTu,
+            DateTime? ngayDatDen,
+            string phuongThucTT,
+            string? tuKhoa)
+        {
+            var query = _context.DonDatTours
+                .Include(d => d.IdTourNavigation)
+                .Include(d => d.IdTaiKhoanNavigation)
+                .AsQueryable();
+
+            switch (trangThai)
+            {
+                case "ChoDuyet":
+                    query = query.Where(d => d.TrangThai == "ChoDuyet");
+                    break;
+                case "DaDuyet":
+                    query = query.Where(d => d.TrangThai == "DaDuyet");
+                    break;
+                case "DaHuy":
+                    query = query.Where(d => d.TrangThai == "DaHuy");
+                    break;
+                case "DaThanhToan":
+                    query = query.Where(d => d.DaThanhToan);
+                    break;
+                case "ChuaThanhToan":
+                    query = query.Where(d => !d.DaThanhToan);
+                    break;
+                case "ChoXacNhanTienMat":
+                    query = query.Where(d => d.TrangThai == BookingPaymentStatus.TrangThaiChoXacNhanTienMat);
+                    break;
+            }
+
+            var tuNgay = ngayDatTu?.Date;
+            var denNgay = ngayDatDen?.Date;
+            if (tuNgay.HasValue && denNgay.HasValue && tuNgay > denNgay)
+            {
+                var tam = tuNgay;
+                tuNgay = denNgay;
+                denNgay = tam;
+            }
+
+            if (tuNgay.HasValue)
+            {
+                query = query.Where(d => d.NgayDat >= tuNgay.Value);
+            }
+
+            if (denNgay.HasValue)
+            {
+                var denNgayBaoGom = denNgay.Value.AddDays(1);
+                query = query.Where(d => d.NgayDat < denNgayBaoGom);
+            }
+
+            if (!string.IsNullOrWhiteSpace(phuongThucTT) && phuongThucTT != "TatCa")
+            {
+                query = query.Where(d => d.PhuongThucTT == phuongThucTT);
+            }
+
+            if (!string.IsNullOrWhiteSpace(tuKhoa))
+            {
+                query = query.Where(d =>
+                    d.MaBooking.Contains(tuKhoa) ||
+                    d.IdTaiKhoanNavigation.HoTen.Contains(tuKhoa));
+            }
+
+            return query.OrderByDescending(d => d.NgayDat);
+        }
+
+        private static string GetTrangThaiHienThi(DonDatTour don)
+        {
+            if (don.DaThanhToan)
+            {
+                return "Da thanh toan";
+            }
+
+            if (don.TrangThai == BookingPaymentStatus.TrangThaiDaHuy)
+            {
+                return "Da huy";
+            }
+
+            if (don.TrangThai == BookingPaymentStatus.TrangThaiChoXacNhanTienMat)
+            {
+                return "Cho xac nhan thu cong";
+            }
+
+            if (don.HanThanhToan != null && don.HanThanhToan < DateTime.Now)
+            {
+                return "Het han thanh toan";
+            }
+
+            return "Cho thanh toan";
         }
 
         private void ThuHoiLuotPhieuNeuCan(DonDatTour don, string ghiChu, bool xoaBanGhiSuDung)

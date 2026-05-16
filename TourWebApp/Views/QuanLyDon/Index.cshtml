@@ -26,17 +26,61 @@
     <div class="alert alert-warning">@TempData["Error"]</div>
 }
 
-<form method="get" class="mb-3 d-flex gap-2">
-    <select name="trangThai" class="form-select w-auto d-inline-block">
-        <option value="TatCa">Tất cả</option>
-        <option value="ChoDuyet" selected="@(ViewBag.TrangThai=="ChoDuyet")">Chờ duyệt</option>
-        <option value="DaDuyet" selected="@(ViewBag.TrangThai=="DaDuyet")">Đã duyệt</option>
-        <option value="DaHuy" selected="@(ViewBag.TrangThai=="DaHuy")">Đã hủy</option>
-        <option value="DaThanhToan" selected="@(ViewBag.TrangThai=="DaThanhToan")">Đã thanh toán</option>
-        <option value="ChuaThanhToan" selected="@(ViewBag.TrangThai=="ChuaThanhToan")">Chưa thanh toán</option>
-        <option value="ChoXacNhanTienMat" selected="@(ViewBag.TrangThai=="ChoXacNhanTienMat")">Chờ xác nhận thủ công</option>
-    </select>
-    <button class="btn btn-primary">Lọc</button>
+<form method="get" class="mb-3 card card-body">
+    <div class="row g-2">
+        <div class="col-12 col-md-3">
+            <label class="form-label mb-1">Trạng thái</label>
+            <select name="trangThai" class="form-select">
+                <option value="TatCa">Tất cả</option>
+                <option value="ChoDuyet" selected="@(ViewBag.TrangThai=="ChoDuyet")">Chờ duyệt</option>
+                <option value="DaDuyet" selected="@(ViewBag.TrangThai=="DaDuyet")">Đã duyệt</option>
+                <option value="DaHuy" selected="@(ViewBag.TrangThai=="DaHuy")">Đã hủy</option>
+                <option value="DaThanhToan" selected="@(ViewBag.TrangThai=="DaThanhToan")">Đã thanh toán</option>
+                <option value="ChuaThanhToan" selected="@(ViewBag.TrangThai=="ChuaThanhToan")">Chưa thanh toán</option>
+                <option value="ChoXacNhanTienMat" selected="@(ViewBag.TrangThai=="ChoXacNhanTienMat")">Chờ xác nhận thủ công</option>
+            </select>
+        </div>
+
+        <div class="col-6 col-md-2">
+            <label class="form-label mb-1">Ngày đặt từ</label>
+            <input type="date" name="ngayDatTu" class="form-control" value="@ViewBag.NgayDatTu" />
+        </div>
+
+        <div class="col-6 col-md-2">
+            <label class="form-label mb-1">Đến ngày</label>
+            <input type="date" name="ngayDatDen" class="form-control" value="@ViewBag.NgayDatDen" />
+        </div>
+
+        <div class="col-12 col-md-2">
+            <label class="form-label mb-1">Phương thức TT</label>
+            <select name="phuongThucTT" class="form-select">
+                <option value="TatCa" selected="@(ViewBag.PhuongThucTT=="TatCa")">Tất cả</option>
+                <option value="VNPAY" selected="@(ViewBag.PhuongThucTT=="VNPAY")">VNPAY</option>
+                <option value="ChuyenKhoanQR" selected="@(ViewBag.PhuongThucTT=="ChuyenKhoanQR")">Chuyển khoản QR</option>
+                <option value="TienMat" selected="@(ViewBag.PhuongThucTT=="TienMat")">Tiền mặt</option>
+                <option value="MienPhi" selected="@(ViewBag.PhuongThucTT=="MienPhi")">Miễn phí</option>
+            </select>
+        </div>
+
+        <div class="col-12 col-md-3">
+            <label class="form-label mb-1">Mã đơn / Tên khách</label>
+            <input type="text"
+                   name="tuKhoa"
+                   class="form-control"
+                   value="@ViewBag.TuKhoa"
+                   placeholder="Nhập mã booking hoặc tên khách" />
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-primary" type="submit">Lọc</button>
+        <button class="btn btn-success"
+                type="submit"
+                formaction="@Url.Action("ExportExcel", "QuanLyDon")">
+            Xuất Excel
+        </button>
+        <a class="btn btn-outline-secondary" href="@Url.Action("Index", "QuanLyDon")">Đặt lại</a>
+    </div>
 </form>
 
 <table class="table table-bordered align-middle">

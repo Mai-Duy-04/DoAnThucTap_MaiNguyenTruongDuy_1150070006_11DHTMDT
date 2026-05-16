@@ -4,7 +4,9 @@
     ViewData["Title"] = "So sánh tour";
 }
 
-<link rel="stylesheet" href="~/css/tour-compare.css" />
+@section Styles {
+    <link rel="stylesheet" href="~/css/tour-compare.css" asp-append-version="true" />
+}
 
 <div class="cmp-page">
 
@@ -140,4 +142,6 @@
     }
 </div>
 
-<script src="~/js/compare-result.js"></script>
+@section Scripts {
+    <script src="~/js/compare-result.js" asp-append-version="true"></script>
+}

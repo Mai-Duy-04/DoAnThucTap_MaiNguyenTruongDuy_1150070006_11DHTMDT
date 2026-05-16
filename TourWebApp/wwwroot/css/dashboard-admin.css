@@ -9,13 +9,22 @@
     box-shadow: 0 15px 30px rgba(0,0,0,0.25);
 }
 
-/* Gradient màu */
-.bg-blue { background: linear-gradient(135deg,#3b6ef5,#5f9cff); }
-.bg-green{ background: linear-gradient(135deg,#2ecc71,#6be6a3); }
-.bg-gray{ background: linear-gradient(135deg,#5f6775,#8a93a6); }
-.bg-red { background: linear-gradient(135deg,#e74c3c,#ff7a6d); }
+/* Gradient màu cho thẻ thống kê.
+   Dùng selector .stat-card.bg-* để không bị .admin-content .card ghi đè nền. */
+.stat-card.bg-blue { background: linear-gradient(135deg,#3b6ef5,#5f9cff) !important; }
+.stat-card.bg-green{ background: linear-gradient(135deg,#2ecc71,#6be6a3) !important; }
+.stat-card.bg-gray{ background: linear-gradient(135deg,#5f6775,#8a93a6) !important; }
+.stat-card.bg-red { background: linear-gradient(135deg,#e74c3c,#ff7a6d) !important; }
 .stat-card.bg-purple { background: linear-gradient(135deg,#7c3aed,#a855f7) !important; }
 .stat-card.bg-orange { background: linear-gradient(135deg,#f59e0b,#fb923c) !important; }
+
+.stat-card .card-body {
+    color: #f8fbff;
+}
+
+.stat-card small.text-white-50 {
+    color: rgba(248, 251, 255, 0.84) !important;
+}
 
 /* Loader */
 #loadingScreen {

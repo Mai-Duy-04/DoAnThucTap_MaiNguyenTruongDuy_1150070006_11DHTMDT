@@ -12,79 +12,86 @@
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
-    <title>Quản trị - HappyTrip</title>
+    <title>@(ViewData["Title"] ?? "Quản trị") - HappyTrip Admin</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
-<body>
+<body class="admin-body">
 <div class="admin-wrapper">
 
     <!-- SIDEBAR -->
     <aside class="admin-sidebar">
         <div class="admin-logo">
-            <span class="logo-circle">H</span>
-            <span class="logo-text">HappyTrip Admin</span>
+            <span class="logo-circle"><i class="fa-solid fa-compass"></i></span>
+            <div class="logo-text-wrap">
+                <span class="logo-text">HappyTrip Admin</span>
+                <small>Control Center</small>
+            </div>
         </div>
 
         <ul class="admin-menu">
-            <li><a href="/QuanTri/Dashboard"><i class="fa-solid fa-chart-line me-2"></i> Dashboard</a></li>
+            <li><a href="/QuanTri/Dashboard" data-menu="/quantri/dashboard"><i class="fa-solid fa-chart-line me-2"></i> Dashboard</a></li>
 
             <li class="menu-title">Quản lý</li>
             <li class="menu-title">Cổng thông tin du lịch</li>
-            <li><a href="/QuanLyChuyenMuc/Index">
+            <li><a href="/QuanLyChuyenMuc/Index" data-menu="/quanlychuyenmuc">
                 <i class="fa-solid fa-folder-tree me-2"></i> Chuyên mục bài viết
             </a></li>
-            <li><a href="/QuanLyBaiViet/Index">
+            <li><a href="/QuanLyBaiViet/Index" data-menu="/quanlybaiviet">
                 <i class="fa-solid fa-newspaper me-2"></i> Bài viết du lịch
             </a></li>
-            <li><a href="/QuanLyBinhLuan/Index">
+            <li><a href="/QuanLyBinhLuan/Index" data-menu="/quanlybinhluan">
                 <i class="fa-solid fa-comments me-2"></i> Bình luận bài viết
             </a></li>
             <li>
-                <a href="/AdminLoaiTour/Index">
+                <a href="/AdminLoaiTour/Index" data-menu="/adminloaitour">
                     <i class="fa-solid fa-tags me-2"></i> Loại tour
                 </a>
             </li>
             <li>
-                <a href="/PhieuGiamGia/Index">
+                <a href="/PhieuGiamGia/Index" data-menu="/phieugiamgia">
                     <i class="fa-solid fa-ticket me-2"></i> Phiếu giảm giá
                 </a>
             </li>
-            <li><a href="/QuanTri/QuanLyTour"><i class="fa-solid fa-map-location-dot me-2"></i> Quản lý tour</a></li>
+            <li><a href="/QuanTri/QuanLyTour" data-menu="/quantri/quanlytour"><i class="fa-solid fa-map-location-dot me-2"></i> Quản lý tour</a></li>
             <li>
-                <a href="/QuanTri/DanhSachLich">
+                <a href="/QuanTri/DanhSachLich" data-menu="/quantri/danhsachlich">
                     <i class="fa-solid fa-calendar-days me-2"></i> Quản lý lịch khởi hành
                 </a>
             </li>
-            <li><a href="/QuanLyDon/Index" class="d-flex align-items-center justify-content-between gap-2">
+            <li><a href="/QuanLyDon/Index" data-menu="/quanlydon" class="d-flex align-items-center justify-content-between gap-2">
                 <span><i class="fa-solid fa-file-invoice-dollar me-2"></i> Đơn đặt tour</span>
                 @if (pendingCashCount > 0)
                 {
-                    <span class="badge rounded-pill bg-danger">@pendingCashBadge</span>
+                    <span class="menu-badge">@pendingCashBadge</span>
                 }
             </a></li>
 
-            <li><a href="/QuanTri/NguoiDung"><i class="fa-solid fa-users me-2"></i> Tài khoản</a></li>
+            <li><a href="/QuanTri/NguoiDung" data-menu="/quantri/nguoidung"><i class="fa-solid fa-users me-2"></i> Tài khoản</a></li>
 
             <li class="menu-title">Khác</li>
-            <li><a href="/TaiKhoan/DangXuat"><i class="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất</a></li>
+            <li><a href="/TaiKhoan/DangXuat" data-menu="/taikhoan/dangxuat"><i class="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất</a></li>
         </ul>
     </aside>
 
+    <button id="adminOverlay" class="admin-overlay" type="button" aria-label="Đóng menu"></button>
+
     <!-- MAIN -->
     <div class="admin-main">
-
-        <!-- TOPBAR -->
-        <header class="admin-topbar">
-            <div class="topbar-title">
-                Xin chào, <strong>@Context.Session.GetString("HoTen")</strong>
-            </div>
-        </header>
+        <button id="btnToggleSidebar"
+                class="admin-menu-toggle admin-menu-toggle-floating"
+                type="button"
+                aria-label="Mở menu quản trị">
+            <i class="fa-solid fa-bars"></i>
+        </button>
 
         <!-- NỘI DUNG -->
         <main class="admin-content">
@@ -102,10 +109,7 @@
 <script src="~/js/admin.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>
-
-
 </html>
-
 
 
 

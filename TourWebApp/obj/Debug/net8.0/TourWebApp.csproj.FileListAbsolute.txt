@@ -345,3 +345,11 @@ C:\Backup code\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\TourWebApp\bin\Debug\n
 C:\Backup code\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\TourWebApp\bin\Debug\net8.0\Microsoft.Extensions.Options.ConfigurationExtensions.dll
 C:\Backup code\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\TourWebApp\bin\Debug\net8.0\Microsoft.Extensions.Primitives.dll
 C:\Backup code\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\TourWebApp\bin\Debug\net8.0\VNPAY.NET.dll
+C:\Backup code\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\TourWebApp\bin\Debug\net8.0\ClosedXML.dll
+C:\Backup code\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\TourWebApp\bin\Debug\net8.0\ClosedXML.Parser.dll
+C:\Backup code\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\TourWebApp\bin\Debug\net8.0\DocumentFormat.OpenXml.dll
+C:\Backup code\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\TourWebApp\bin\Debug\net8.0\DocumentFormat.OpenXml.Framework.dll
+C:\Backup code\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\TourWebApp\bin\Debug\net8.0\ExcelNumberFormat.dll
+C:\Backup code\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\TourWebApp\bin\Debug\net8.0\RBush.dll
+C:\Backup code\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\TourWebApp\bin\Debug\net8.0\SixLabors.Fonts.dll
+C:\Backup code\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\TourWebApp\bin\Debug\net8.0\System.IO.Packaging.dll
