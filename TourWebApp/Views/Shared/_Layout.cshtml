@@ -1,3 +1,10 @@
+@{
+    var layoutPath = Context.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
+    var isAuthLayout = layoutPath.StartsWith("/taikhoan/dangnhap") || layoutPath.StartsWith("/taikhoan/dangky");
+    var toastSuccess = TempData["ToastSuccess"] as string;
+    var toastError = TempData["ToastError"] as string;
+    var toastInfo = TempData["ToastInfo"] as string;
+}
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -7,14 +14,40 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <link rel="stylesheet" href="~/css/travel-modern.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
-<body class="travel-body">
+<body class="travel-body @(isAuthLayout ? "auth-layout" : "")">
     <partial name="~/Views/Shared/TravelComponents/_Navbar.cshtml" />
+
+    @if (!string.IsNullOrWhiteSpace(toastSuccess) || !string.IsNullOrWhiteSpace(toastError) || !string.IsNullOrWhiteSpace(toastInfo))
+    {
+        var toastType = !string.IsNullOrWhiteSpace(toastError) ? "error" : (!string.IsNullOrWhiteSpace(toastInfo) ? "info" : "success");
+        var toastMessage = toastError ?? toastInfo ?? toastSuccess;
+        <div class="app-toast app-toast-@toastType" role="status" aria-live="polite">
+            <span class="app-toast-icon">
+                @if (toastType == "error")
+                {
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                }
+                else if (toastType == "info")
+                {
+                    <i class="fa-solid fa-circle-info"></i>
+                }
+                else
+                {
+                    <i class="fa-solid fa-circle-check"></i>
+                }
+            </span>
+            <span>@toastMessage</span>
+            <button type="button" class="app-toast-close" aria-label="Đóng thông báo">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    }
 
     <main class="travel-main">
         @RenderBody()

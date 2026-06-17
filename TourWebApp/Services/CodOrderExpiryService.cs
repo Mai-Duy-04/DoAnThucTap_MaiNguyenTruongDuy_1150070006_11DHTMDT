@@ -22,13 +22,16 @@ public class CodOrderExpiryService : BackgroundService
             try
             {
                 await XuLyDonCodQuaHan(stoppingToken);
+                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "COD expiry job failed.");
             }
-
-            await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
         }
     }
 

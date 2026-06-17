@@ -18,3 +18,17 @@
 
     revealElements.forEach((el) => observer.observe(el));
 })();
+
+(() => {
+    const toast = document.querySelector('.app-toast');
+    if (!toast) return;
+
+    const close = () => {
+        if (toast.classList.contains('is-hiding')) return;
+        toast.classList.add('is-hiding');
+        window.setTimeout(() => toast.remove(), 320);
+    };
+
+    toast.querySelector('.app-toast-close')?.addEventListener('click', close);
+    window.setTimeout(close, 4200);
+})();

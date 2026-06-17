@@ -151,13 +151,28 @@
 }
 
 .tour-detail-btn-outline {
-    border: 1px solid rgba(255, 255, 255, 0.58);
+    border: 1px solid rgba(216, 195, 165, 0.9);
     color: var(--travel-white);
-    background: transparent;
+    background: rgba(36, 56, 47, 0.72);
 }
 
 .tour-detail-btn-outline:hover {
-    background: rgba(255, 255, 255, 0.92);
+    background: var(--travel-sand);
+    color: var(--travel-green);
+    border-color: var(--travel-sand);
+    transform: translateY(-2px);
+}
+
+.tour-detail-booking-card .tour-detail-btn-outline {
+    background: var(--travel-green);
+    border-color: var(--travel-green);
+    color: var(--travel-white);
+    box-shadow: 0 10px 20px rgba(36, 56, 47, 0.12);
+}
+
+.tour-detail-booking-card .tour-detail-btn-outline:hover {
+    background: var(--travel-sand);
+    border-color: var(--travel-sand);
     color: var(--travel-green);
 }
 

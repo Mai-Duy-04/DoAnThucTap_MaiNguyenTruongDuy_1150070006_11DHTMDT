@@ -603,13 +603,17 @@ namespace TourWebApp.Controllers
 
             try
             {
-                var paymentResult = _vnpayClient.GetPaymentResult(Request);
-                var paymentId = paymentResult.PaymentId.ToString();
+                var paymentId = Request.Query["vnp_TxnRef"].ToString();
 
-                _logger.LogInformation(
-                    "VNPAY ipn parsed | PaymentId={PaymentId} | VnpTxnId={VnpTxnId}",
-                    paymentId,
-                    paymentResult.VnpayTransactionId);
+                if (string.IsNullOrWhiteSpace(paymentId))
+                {
+                    return VnpayIpnResponse("99", "Input data invalid");
+                }
+
+                if (!ValidateVnpaySecureHash())
+                {
+                    return VnpayIpnResponse("97", "Invalid signature");
+                }
 
                 var don = _db.DonDatTours
                     .Include(t => t.IdLichNavigation)
@@ -618,33 +622,55 @@ namespace TourWebApp.Controllers
 
                 if (don == null)
                 {
-                    return Json(new { RspCode = "01", Message = "Order not found" });
+                    return VnpayIpnResponse("01", "Order not found");
+                }
+
+                var vnpAmountRaw = Request.Query["vnp_Amount"].ToString();
+                if (!decimal.TryParse(vnpAmountRaw, out var vnpAmount) || vnpAmount / 100 != TinhTongCanThanhToan(don))
+                {
+                    return VnpayIpnResponse("04", "Invalid amount");
                 }
 
                 if (don.DaThanhToan)
                 {
-                    return Json(new { RspCode = "02", Message = "Order already confirmed" });
+                    return VnpayIpnResponse("02", "Order already confirmed");
                 }
 
                 if (don.TrangThai == "ChoThanhToan" && DonDaHetHan(don))
                 {
                     HuyDonQuaHan(don, "Don het han khi VNPAY IPN");
                     _db.SaveChanges();
-                    return Json(new { RspCode = "03", Message = "Order expired" });
+                    return VnpayIpnResponse("00", "Confirm Success");
                 }
 
-                CapNhatDonThanhToanThanhCong(don, "VNPAY", paymentResult.VnpayTransactionId.ToString());
-                _db.SaveChanges();
-                _ = GuiMailThanhToanThanhCongAsync(don);
+                var responseCode = Request.Query["vnp_ResponseCode"].ToString();
+                var transactionStatus = Request.Query["vnp_TransactionStatus"].ToString();
+                var vnpayTransactionId = Request.Query["vnp_TransactionNo"].ToString();
 
-                return Json(new { RspCode = "00", Message = "Confirm Success" });
+                if (responseCode == "00" && transactionStatus == "00")
+                {
+                    CapNhatDonThanhToanThanhCong(don, "VNPAY", vnpayTransactionId);
+                }
+                else
+                {
+                    don.TrangThaiThanhToan = $"VNPAY:{responseCode}";
+                    _db.Entry(don).Property(x => x.TrangThaiThanhToan).IsModified = true;
+                }
+
+                _db.SaveChanges();
+                if (don.DaThanhToan)
+                {
+                    _ = GuiMailThanhToanThanhCongAsync(don);
+                }
+
+                return VnpayIpnResponse("00", "Confirm Success");
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex,
                     "VNPAY ipn invalid payload | Query={Query}",
                     Request.QueryString.Value);
-                return Json(new { RspCode = "99", Message = "Input data invalid" });
+                return VnpayIpnResponse("99", "Unknown error");
             }
         }
 
@@ -746,6 +772,37 @@ namespace TourWebApp.Controllers
             var soTienGiam = don.SoTienGiam ?? 0;
             var tongCanThanhToan = don.TongTienSauGiam ?? (tongGoc - soTienGiam);
             return tongCanThanhToan < 0 ? 0 : tongCanThanhToan;
+        }
+
+        private ContentResult VnpayIpnResponse(string rspCode, string message)
+        {
+            return Content(
+                $"{{\"RspCode\":\"{rspCode}\",\"Message\":\"{message}\"}}",
+                "application/json");
+        }
+
+        private bool ValidateVnpaySecureHash()
+        {
+            var secureHash = Request.Query["vnp_SecureHash"].ToString();
+            if (string.IsNullOrWhiteSpace(secureHash))
+            {
+                return false;
+            }
+
+            var hashData = Request.Query
+                .Where(x => x.Key.StartsWith("vnp_", StringComparison.OrdinalIgnoreCase)
+                    && !x.Key.Equals("vnp_SecureHash", StringComparison.OrdinalIgnoreCase)
+                    && !x.Key.Equals("vnp_SecureHashType", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(x => x.Key, StringComparer.Ordinal)
+                .Select(x => $"{Uri.EscapeDataString(x.Key)}={Uri.EscapeDataString(x.Value.ToString()).Replace("%20", "+")}");
+
+            var data = string.Join("&", hashData);
+            var hashSecret = _configuration["VNPAY:HashSecret"] ?? string.Empty;
+            using var hmac = new System.Security.Cryptography.HMACSHA512(System.Text.Encoding.UTF8.GetBytes(hashSecret));
+            var bytes = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(data));
+            var expectedHash = string.Concat(bytes.Select(x => x.ToString("x2")));
+
+            return string.Equals(expectedHash, secureHash, StringComparison.OrdinalIgnoreCase);
         }
 
         private void HuyDonQuaHan(DonDatTour don, string ghiChu)

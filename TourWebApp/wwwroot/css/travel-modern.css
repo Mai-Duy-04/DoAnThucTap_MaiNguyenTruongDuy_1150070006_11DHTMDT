@@ -22,10 +22,18 @@ body {
 }
 
 body.travel-body {
-    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    font-family: "Playfair Display", Georgia, serif;
     color: var(--text-dark);
     background: var(--cream);
     line-height: 1.6;
+}
+
+button,
+input,
+select,
+textarea,
+.btn {
+    font-family: "Playfair Display", Georgia, serif;
 }
 
 img {
@@ -39,7 +47,7 @@ a {
 
 .travel-main {
     min-height: 72vh;
-    padding-top: 78px;
+    padding-top: 70px;
 }
 
 .travel-container {
@@ -120,35 +128,38 @@ h6 {
 }
 
 .travel-navbar {
-    background: rgba(36, 56, 47, 0.66);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-    padding: 14px 0;
+    background: rgba(52, 68, 57, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(216, 195, 165, 0.46);
+    box-shadow: 0 10px 24px rgba(20, 32, 27, 0.14);
+    padding: 8px 0;
 }
 
 .travel-brand {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     color: var(--white);
 }
 
 .brand-mark {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
     background: var(--sand);
     color: var(--deep-green);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-weight: 800;
+    font-weight: 900;
+    box-shadow: inset 0 -2px 0 rgba(36, 56, 47, 0.12);
 }
 
 .brand-text {
     font-family: "Playfair Display", Georgia, serif;
-    font-size: 1.28rem;
+    font-size: 1.34rem;
     letter-spacing: 0.02em;
+    font-weight: 800;
 }
 
 .travel-navbar-toggler {
@@ -160,22 +171,25 @@ h6 {
 }
 
 .travel-nav-link {
-    color: rgba(255, 255, 255, 0.92);
-    font-weight: 600;
-    padding: 8px 12px !important;
+    color: rgba(255, 255, 255, 0.96);
+    font-weight: 800;
+    padding: 8px 13px !important;
     border-radius: 999px;
-    transition: background 0.24s ease, color 0.24s ease;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+    transition: background 0.24s ease, color 0.24s ease, transform 0.24s ease;
 }
 
 .travel-nav-link:hover,
 .travel-nav-link.is-active {
     color: var(--deep-green);
     background: var(--sand);
+    transform: translateY(-1px);
+    text-shadow: none;
 }
 
 .travel-btn {
     border-radius: 999px;
-    font-weight: 700;
+    font-weight: 900;
     padding: 11px 22px;
     transition: transform 0.24s ease, box-shadow 0.24s ease, background-color 0.24s ease, color 0.24s ease;
 }
@@ -227,6 +241,90 @@ h6 {
     background: var(--white);
     color: var(--deep-green);
     transform: translateY(-2px);
+}
+
+.app-toast {
+    position: fixed;
+    top: 88px;
+    right: 24px;
+    z-index: 2200;
+    min-width: min(360px, calc(100vw - 32px));
+    max-width: min(420px, calc(100vw - 32px));
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(216, 195, 165, 0.58);
+    box-shadow: 0 20px 42px rgba(20, 32, 27, 0.18);
+    backdrop-filter: blur(12px);
+    color: var(--deep-green);
+    font-weight: 800;
+    transform: translateY(-14px);
+    opacity: 0;
+    pointer-events: auto;
+    animation: toastIn 0.42s ease forwards;
+}
+
+.app-toast.is-hiding {
+    animation: toastOut 0.28s ease forwards;
+}
+
+.app-toast-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.app-toast-success .app-toast-icon {
+    background: #e7f3e7;
+    color: #2f6b3c;
+}
+
+.app-toast-error .app-toast-icon {
+    background: #fff0f0;
+    color: #b4232b;
+}
+
+.app-toast-info .app-toast-icon {
+    background: #eef4ff;
+    color: #315f9c;
+}
+
+.app-toast-close {
+    margin-left: auto;
+    border: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(36, 56, 47, 0.08);
+    color: var(--deep-green);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-toast-close:hover {
+    background: rgba(36, 56, 47, 0.16);
+}
+
+@keyframes toastIn {
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes toastOut {
+    to {
+        transform: translateY(-12px);
+        opacity: 0;
+    }
 }
 
 .hero-section {
@@ -518,6 +616,11 @@ h6 {
     gap: 12px;
 }
 
+.tour-footer {
+    margin-top: auto;
+    padding-top: 18px;
+}
+
 .destination-price strong,
 .tour-price {
     color: var(--deep-green);
@@ -684,7 +787,7 @@ h6 {
 
 .footer-title {
     color: var(--sand);
-    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    font-family: "Playfair Display", Georgia, serif;
     font-size: 0.82rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;

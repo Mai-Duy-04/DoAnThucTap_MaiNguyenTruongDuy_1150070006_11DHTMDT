@@ -28,12 +28,14 @@ namespace TourWebApp.Controllers
             if (MatKhau != MatKhauNhapLai)
             {
                 ViewBag.ThongBao = "Mat khau khong khop";
+                TempData["ToastError"] = "Mat khau khong khop.";
                 return View();
             }
 
             if (_context.TaiKhoans.Any(x => x.Email == Email))
             {
                 ViewBag.ThongBao = "Email da ton tai";
+                TempData["ToastError"] = "Email da ton tai.";
                 return View();
             }
 
@@ -45,6 +47,7 @@ namespace TourWebApp.Controllers
             else if (!Email.EndsWith("@gmail.com", StringComparison.OrdinalIgnoreCase))
             {
                 ViewBag.ThongBao = "Email phai la gmail hoac happydulich.vn";
+                TempData["ToastError"] = "Email phai la gmail hoac happydulich.vn.";
                 return View();
             }
 
@@ -61,15 +64,18 @@ namespace TourWebApp.Controllers
             _context.TaiKhoans.Add(tk);
             _context.SaveChanges();
 
-            ViewBag.ThongBao = "Dang ky thanh cong, hay dang nhap";
-            return View();
+            TempData["ToastSuccess"] = "Dang ky thanh cong. Hay dang nhap de tiep tuc.";
+            return RedirectToAction("DangNhap");
         }
 
         [HttpGet]
         public IActionResult DangNhap(string? returnUrl)
         {
             ViewBag.ReturnUrl = returnUrl;
-            ViewBag.ThongBao = TempData["ThongBao"];
+            if (TempData["ThongBao"] is string thongBao && !string.IsNullOrWhiteSpace(thongBao))
+            {
+                TempData["ToastInfo"] = thongBao;
+            }
             return View();
         }
 
@@ -82,12 +88,14 @@ namespace TourWebApp.Controllers
             if (user == null)
             {
                 ViewBag.ThongBao = "Sai email hoac mat khau";
+                TempData["ToastError"] = "Sai email hoac mat khau.";
                 return View();
             }
 
             HttpContext.Session.SetInt32("IdTaiKhoan", user.IdTaiKhoan);
             HttpContext.Session.SetString("HoTen", user.HoTen);
             HttpContext.Session.SetString("VaiTro", user.VaiTro);
+            TempData["ToastSuccess"] = $"Dang nhap thanh cong. Xin chao {user.HoTen}.";
 
             if (!string.IsNullOrEmpty(returnUrl))
             {
