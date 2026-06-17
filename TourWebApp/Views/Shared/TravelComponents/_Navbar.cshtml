@@ -30,9 +30,9 @@
             <div class="collapse navbar-collapse" id="travelMainNav">
                 <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
                     <li class="nav-item"><a class="nav-link travel-nav-link @(IsActive("/") ? "is-active" : "")" href="/">Trang chủ</a></li>
-                    <li class="nav-item"><a class="nav-link travel-nav-link @(IsActive("/destinations") ? "is-active" : "")" href="/destinations">Điểm đến</a></li>
-                    <li class="nav-item"><a class="nav-link travel-nav-link @(IsActive("/tours") ? "is-active" : "")" href="/tours">Tours</a></li>
                     <li class="nav-item"><a class="nav-link travel-nav-link @(IsActive("/about") ? "is-active" : "")" href="/about">Giới thiệu</a></li>
+                    <li class="nav-item"><a class="nav-link travel-nav-link @(IsActive("/tours") ? "is-active" : "")" href="/tours">Tour</a></li>
+                    <li class="nav-item"><a class="nav-link travel-nav-link @(IsActive("/destinations") ? "is-active" : "")" href="/destinations">Điểm đến</a></li>
                     <li class="nav-item"><a class="nav-link travel-nav-link @(IsActive("/contact") ? "is-active" : "")" href="/contact">Liên hệ</a></li>
 
                     @if (idTaiKhoan == null)

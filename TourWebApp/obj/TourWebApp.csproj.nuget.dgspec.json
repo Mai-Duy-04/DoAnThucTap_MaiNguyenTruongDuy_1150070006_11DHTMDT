@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Backup code\\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\\TourWebApp\\TourWebApp.csproj": {}
+    "D:\\Đồ Án Thực Tập\\DoAnThucTap_MaiNguyenTruongDuy_1150070006_11DHTMDT\\TourWebApp\\TourWebApp.csproj": {}
   },
   "projects": {
-    "C:\\Backup code\\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\\TourWebApp\\TourWebApp.csproj": {
+    "D:\\Đồ Án Thực Tập\\DoAnThucTap_MaiNguyenTruongDuy_1150070006_11DHTMDT\\TourWebApp\\TourWebApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Backup code\\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\\TourWebApp\\TourWebApp.csproj",
+        "projectUniqueName": "D:\\Đồ Án Thực Tập\\DoAnThucTap_MaiNguyenTruongDuy_1150070006_11DHTMDT\\TourWebApp\\TourWebApp.csproj",
         "projectName": "TourWebApp",
-        "projectPath": "C:\\Backup code\\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\\TourWebApp\\TourWebApp.csproj",
-        "packagesPath": "C:\\Users\\Thang\\.nuget\\packages\\",
-        "outputPath": "C:\\Backup code\\4_MaiNguyenTruongDuy_11DHTMDT_DACN_HD2HTTT\\TourWebApp\\obj\\",
+        "projectPath": "D:\\Đồ Án Thực Tập\\DoAnThucTap_MaiNguyenTruongDuy_1150070006_11DHTMDT\\TourWebApp\\TourWebApp.csproj",
+        "packagesPath": "C:\\Users\\MY PC\\.nuget\\packages\\",
+        "outputPath": "D:\\Đồ Án Thực Tập\\DoAnThucTap_MaiNguyenTruongDuy_1150070006_11DHTMDT\\TourWebApp\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Thang\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\MY PC\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -98,6 +98,24 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.24, 8.0.24]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x64",
+              "version": "[8.0.24, 8.0.24]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.24, 8.0.24]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[8.0.24, 8.0.24]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.AspNetCore.App": {
               "privateAssets": "none"
@@ -106,7 +124,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.101/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
