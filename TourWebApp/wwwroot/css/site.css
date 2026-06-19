@@ -8,7 +8,7 @@
 }
 
 body {
-    font-family: "Segoe UI", Arial, sans-serif;
+    font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif;
     color: #0f172a;
     background-color: #ffffff;
     line-height: 1.6;
@@ -398,7 +398,7 @@ body {
     left: -6px;
     font-size: 44px;
     color: rgba(15,23,42,0.1);
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif;
 }
 
 .testimonial-text {
@@ -756,7 +756,7 @@ body {
 }
 
 .wishlist-head h2 {
-    font-family: "Playfair Display", serif;
+    font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif;
     color: #1f3a2e;
     font-size: clamp(1.8rem, 2.6vw, 2.35rem);
 }
@@ -818,7 +818,7 @@ body {
 }
 
 .wishlist-title {
-    font-family: "Playfair Display", serif;
+    font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif;
     color: #1f3a2e;
     font-size: 1.55rem;
     line-height: 1.3;
@@ -1886,14 +1886,14 @@ body {
 
 html,
 body {
-    font-family: "Manrope", "Segoe UI", Arial, sans-serif;
+    font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif;
 }
 
 h1, h2, h3, h4, h5, h6,
 .section-title,
 .home-section-title,
 .title-all-tour {
-    font-family: "Sora", "Manrope", "Segoe UI", Arial, sans-serif;
+    font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif;
     letter-spacing: -0.02em;
 }
 
@@ -2293,7 +2293,7 @@ a:hover {
    Wishlist Card - final override (prevent style conflicts)
 ================================================ */
 .wishlist-page .wishlist-head h2 {
-    font-family: "Playfair Display", serif;
+    font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif;
     font-size: clamp(2rem, 3vw, 2.6rem);
     color: #12344a;
 }
@@ -2362,7 +2362,7 @@ a:hover {
 }
 
 .wishlist-page .wishlist-title {
-    font-family: "Playfair Display", serif;
+    font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif;
     color: #12344a;
     font-size: 2rem;
     line-height: 1.25;

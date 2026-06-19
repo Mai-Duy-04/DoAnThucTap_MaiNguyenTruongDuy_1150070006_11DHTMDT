@@ -345,7 +345,7 @@ input[type="range"]::-webkit-slider-thumb {
 .tour-list-card .tour-list-meta { padding: 10px 12px !important; font-size: 14px; background: #fbf8f1 !important; }
 .tour-list-card .tour-list-meta p { margin-bottom: 4px !important; }
 .tour-list-card .tour-list-title { font-size: 1.22rem; line-height: 1.35; color:var(--travel-green); }
-.tour-list-title { font-family: Georgia, "Times New Roman", serif; color: var(--travel-text) !important; margin: 2px 0 4px; }
+.tour-list-title { font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif; color: var(--travel-text) !important; margin: 2px 0 4px; }
 .tour-list-tag { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--travel-moss); font-weight: 700; }
 .tour-list-desc {
     color: var(--travel-muted);

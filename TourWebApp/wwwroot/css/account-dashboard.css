@@ -38,7 +38,7 @@
     display: inline-flex; align-items: center; justify-content: center; font-weight: 800;
 }
 .account-user-kicker { margin: 0; font-size: 12px; color: var(--travel-muted); }
-.account-user-chip h2 { margin: 2px 0; font-size: 1.05rem; font-family: "Inter", sans-serif; color: var(--travel-green); }
+.account-user-chip h2 { margin: 2px 0; font-size: 1.05rem; font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif; color: var(--travel-green); }
 .account-user-email { margin: 0; font-size: 12px; color: var(--travel-muted); }
 
 .account-dashboard-nav { display: grid; gap: 8px; margin-bottom: 16px; }
@@ -61,7 +61,7 @@
     box-shadow: 0 12px 30px rgba(36, 56, 47, 0.08);
     padding: 22px;
 }
-.account-panel-head h3, .account-panel-head h4 { margin: 0; font-family: "Playfair Display", serif; color: var(--travel-green); }
+.account-panel-head h3, .account-panel-head h4 { margin: 0; font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif; color: var(--travel-green); }
 .account-panel-head p { margin: 6px 0 0; color: var(--travel-muted); }
 .account-panel-head-inline { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
@@ -214,7 +214,7 @@
 }
 
 .booking-detail-kicker { margin: 0; text-transform: uppercase; letter-spacing: .08em; font-size: 12px; color: #d7e2dd; }
-.booking-detail-head h2 { margin: 4px 0 6px; font-family: "Playfair Display", serif; }
+.booking-detail-head h2 { margin: 4px 0 6px; font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif; }
 .booking-detail-head p { margin: 0; color: #e9f0ec; }
 
 .booking-status-badge { border-radius: 999px; padding: 8px 12px; font-weight: 700; background: #fff5d8; color: #8a6400; }
@@ -237,7 +237,7 @@
 
 .booking-detail-grid { margin-top: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .booking-card { background: #fff; border: 1px solid #e8dfd2; border-radius: 22px; padding: 16px; box-shadow: 0 10px 28px rgba(36,56,47,.08); }
-.booking-card h4 { margin: 0 0 10px; color: var(--travel-green); font-family: "Playfair Display", serif; }
+.booking-card h4 { margin: 0 0 10px; color: var(--travel-green); font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif; }
 
 .booking-kv p { margin: 0; padding: 9px 0; border-bottom: 1px dashed #ece3d7; display: flex; justify-content: space-between; gap: 12px; }
 .booking-kv p:last-child { border-bottom: 0; }

@@ -1,4 +1,6 @@
 :root {
+    --app-font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif;
+    --bs-body-font-family: var(--app-font-family);
     --admin-bg-1: #f3f7fc;
     --admin-bg-2: #e7f0fb;
     --admin-ink: #112236;
@@ -20,11 +22,19 @@
 .admin-body {
     margin: 0;
     min-height: 100vh;
-    font-family: "Manrope", "Segoe UI", sans-serif;
+    font-family: var(--app-font-family);
     color: var(--admin-ink);
     background: radial-gradient(circle at 12% 8%, rgba(16, 179, 200, 0.16), transparent 44%),
                 radial-gradient(circle at 90% 20%, rgba(10, 132, 255, 0.12), transparent 42%),
                 linear-gradient(180deg, var(--admin-bg-2) 0%, var(--admin-bg-1) 100%);
+}
+
+.admin-body button,
+.admin-body input,
+.admin-body select,
+.admin-body textarea,
+.admin-body .btn {
+    font-family: var(--app-font-family);
 }
 
 .admin-wrapper {

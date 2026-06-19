@@ -23,7 +23,7 @@
 
 .ticket-header { padding: 14px 18px 10px; background: linear-gradient(135deg, #24382f, #4f6358); color: #f4f8f5; display: flex; justify-content: space-between; gap: 16px; }
 .ticket-kicker { margin: 0; text-transform: uppercase; letter-spacing: .09em; font-size: 12px; color: #d8e4df; }
-.ticket-header h2 { margin: 3px 0; font-family: "Playfair Display", serif; color: #ffe8b8; font-size: clamp(1.35rem,2vw,1.8rem); }
+.ticket-header h2 { margin: 3px 0; font-family: "Tai Heritage Pro", "Segoe UI", Arial, sans-serif; color: #ffe8b8; font-size: clamp(1.35rem,2vw,1.8rem); }
 .ticket-header p { margin: 0; color: #e6efea; }
 .ticket-head-meta { text-align: right; }
 .ticket-booking-code, .ticket-created-time { margin: 0; font-size: 13px; color: #dbe5e0; }
