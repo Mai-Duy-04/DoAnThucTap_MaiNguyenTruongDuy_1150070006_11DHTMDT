@@ -882,8 +882,8 @@ namespace TourWebApp.Controllers
         private (decimal GiaNguoiLon, decimal GiaTreEm, decimal GiaEmBe, decimal TongTien) TinhGiaDatTour(Tour tour, int nguoiLon, int treEm, int emBe)
         {
             decimal giaNguoiLon = (decimal)(tour.GiaKhuyenMai ?? tour.GiaGoc ?? 0);
-            decimal giaTreEm = (decimal)(tour.TourGiaChiTiets.FirstOrDefault(x => x.DoiTuong == "Trẻ em")?.Gia ?? 0);
-            decimal giaEmBe = (decimal)(tour.TourGiaChiTiets.FirstOrDefault(x => x.DoiTuong == "Em bé")?.Gia ?? 0);
+            decimal giaTreEm = (decimal)(tour.TourGiaChiTiets.FirstOrDefault(x => TourPriceAudience.IsChild(x.DoiTuong))?.Gia ?? 0);
+            decimal giaEmBe = (decimal)(tour.TourGiaChiTiets.FirstOrDefault(x => TourPriceAudience.IsInfant(x.DoiTuong))?.Gia ?? 0);
 
             decimal tongTien = nguoiLon * giaNguoiLon + treEm * giaTreEm + emBe * giaEmBe;
             return (giaNguoiLon, giaTreEm, giaEmBe, tongTien);

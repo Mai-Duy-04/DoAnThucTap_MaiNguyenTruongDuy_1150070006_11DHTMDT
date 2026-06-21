@@ -272,9 +272,9 @@ namespace TourWebApp.Controllers
                 .FirstOrDefault();
 
             // GIA TU CSDL
-            ViewBag.GiaNguoiLon = tour.TourGiaChiTiets.FirstOrDefault(x => x.DoiTuong == "Người lớn");
-            ViewBag.GiaTreEm = tour.TourGiaChiTiets.FirstOrDefault(x => x.DoiTuong == "Trẻ em");
-            ViewBag.GiaEmBe = tour.TourGiaChiTiets.FirstOrDefault(x => x.DoiTuong == "Em bé");
+            ViewBag.GiaNguoiLon = tour.TourGiaChiTiets.FirstOrDefault(x => TourPriceAudience.IsAdult(x.DoiTuong));
+            ViewBag.GiaTreEm = tour.TourGiaChiTiets.FirstOrDefault(x => TourPriceAudience.IsChild(x.DoiTuong));
+            ViewBag.GiaEmBe = tour.TourGiaChiTiets.FirstOrDefault(x => TourPriceAudience.IsInfant(x.DoiTuong));
 
             // TOUR LIEN QUAN
             ViewBag.TourLienQuan = _db.Tours
@@ -402,7 +402,7 @@ namespace TourWebApp.Controllers
                     DiaDiem = t.DiaDiem,
                     ThoiGian = t.ThoiGian,
                     PhuongTien = t.PhuongTien,
-                    GiaNguoiLon = t.TourGiaChiTiets.FirstOrDefault(x => x.DoiTuong == "Người lớn")?.Gia
+                    GiaNguoiLon = t.TourGiaChiTiets.FirstOrDefault(x => TourPriceAudience.IsAdult(x.DoiTuong))?.Gia
                         ?? t.GiaKhuyenMai
                         ?? t.GiaGoc,
                     SoChoConLai = lichMap.TryGetValue(t.IdTour, out var lich) ? (lich?.SoChoConLai ?? 0) : 0,

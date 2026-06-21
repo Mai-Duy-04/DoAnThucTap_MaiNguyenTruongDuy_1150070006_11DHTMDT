@@ -11,15 +11,15 @@
     var giaList = Model.TourGiaChiTiets.ToList();
 
     decimal giaNguoiLon =
-        (decimal)((giaList.FirstOrDefault(g => g.DoiTuong == "Người lớn")?.Gia)
+        (decimal)((giaList.FirstOrDefault(g => TourPriceAudience.IsAdult(g.DoiTuong))?.Gia)
         ?? (Model.GiaKhuyenMai ?? 0));
 
     decimal giaTreEm =
-        (decimal)((giaList.FirstOrDefault(g => g.DoiTuong == "Trẻ em")?.Gia)
+        (decimal)((giaList.FirstOrDefault(g => TourPriceAudience.IsChild(g.DoiTuong))?.Gia)
         ?? 0);
 
     decimal giaEmBe =
-        (decimal)((giaList.FirstOrDefault(g => g.DoiTuong == "Em bé")?.Gia)
+        (decimal)((giaList.FirstOrDefault(g => TourPriceAudience.IsInfant(g.DoiTuong))?.Gia)
         ?? 0);
 
     var tourLienQuan = ViewBag.TourLienQuan as List<Tour>;
@@ -444,7 +444,7 @@
                         {
                             <article class="tour-detail-price-policy-card">
                                 <span class="tour-detail-price-policy-label">Đối tượng</span>
-                                <h4>@g.DoiTuong</h4>
+                                <h4>@TourPriceAudience.GetDisplayName(g.DoiTuong)</h4>
                                 <p class="tour-detail-price-policy-price">@string.Format("{0:N0} đ", g.Gia)</p>
                                 <p class="tour-detail-price-policy-note">@(string.IsNullOrWhiteSpace(g.GhiChu) ? "Áp dụng theo chương trình tour hiện hành." : g.GhiChu)</p>
                             </article>

@@ -241,6 +241,7 @@ namespace TourWebApp.Controllers
                 model.GiaKhuyenMai = model.GiaGoc - (model.GiaGoc * model.PhanTramGiam / 100);
 
            
+            string? uploadedImagePath = null;
             if (HinhAnhFile != null && HinhAnhFile.Length > 0)
             {
                 string fileName = Guid.NewGuid() + Path.GetExtension(HinhAnhFile.FileName);
@@ -252,39 +253,48 @@ namespace TourWebApp.Controllers
                 }
 
                 model.HinhAnh = fileName;
+                uploadedImagePath = path;
             }
 
-            _context.Tours.Add(model);
-            _context.SaveChanges();
-
-           decimal giaNguoiLon = model.GiaKhuyenMai ?? 0;
+            decimal giaNguoiLon = model.GiaKhuyenMai ?? 0;
             decimal giaTreEm = giaNguoiLon * 0.5m; 
             decimal giaEmBe = 0;
 
-            var priceList = new List<TourGiaChiTiet>
+            model.TourGiaChiTiets = new List<TourGiaChiTiet>
             {
                 new TourGiaChiTiet {
-                    IdTour = model.IdTour,
-                    DoiTuong = "Người lớn",
+                    DoiTuong = TourPriceAudience.Adult,
                     Gia = giaNguoiLon,
                     GhiChu = "Tự động tạo"
                 },
                 new TourGiaChiTiet {
-                    IdTour = model.IdTour,
-                    DoiTuong = "Trẻ em",
+                    DoiTuong = TourPriceAudience.Child,
                     Gia = giaTreEm,
-                    GhiChu = "70% giá người lớn"
+                    GhiChu = "50% giá người lớn"
                 },
                 new TourGiaChiTiet {
-                    IdTour = model.IdTour,
-                    DoiTuong = "Em bé",
+                    DoiTuong = TourPriceAudience.Infant,
                     Gia = giaEmBe,
                     GhiChu = "Miễn phí"
                 }
             };
 
-            _context.TourGiaChiTiets.AddRange(priceList);
-            _context.SaveChanges();
+            _context.Tours.Add(model);
+            try
+            {
+                _context.SaveChanges();
+            }
+            catch (DbUpdateException)
+            {
+                if (!string.IsNullOrWhiteSpace(uploadedImagePath) && System.IO.File.Exists(uploadedImagePath))
+                {
+                    System.IO.File.Delete(uploadedImagePath);
+                }
+
+                ModelState.AddModelError(string.Empty, "Không thể lưu tour và bảng giá. Vui lòng kiểm tra dữ liệu rồi thử lại.");
+                ViewBag.LoaiTours = _context.LoaiTours.OrderBy(x => x.TenLoai).ToList();
+                return View(model);
+            }
 
             TempData["ThongBao"] = "✅ Đã thêm tour mới thành công";
             return RedirectToAction("QuanLyTour");
@@ -310,15 +320,15 @@ namespace TourWebApp.Controllers
 
            
             ViewBag.GiaNguoiLon = tour.TourGiaChiTiets
-                .FirstOrDefault(g => g.DoiTuong == "Người lớn")?.Gia ?? 0;
+                .FirstOrDefault(g => TourPriceAudience.IsAdult(g.DoiTuong))?.Gia ?? 0;
 
             
             ViewBag.GiaTreEm = tour.TourGiaChiTiets
-                .FirstOrDefault(g => g.DoiTuong == "Trẻ em")?.Gia ?? 0;
+                .FirstOrDefault(g => TourPriceAudience.IsChild(g.DoiTuong))?.Gia ?? 0;
 
             
             ViewBag.GiaEmBe = tour.TourGiaChiTiets
-                .FirstOrDefault(g => g.DoiTuong == "Em bé")?.Gia ?? 0;
+                .FirstOrDefault(g => TourPriceAudience.IsInfant(g.DoiTuong))?.Gia ?? 0;
 
             return View(tour);
         }
@@ -338,14 +348,40 @@ namespace TourWebApp.Controllers
             return View(tour);
         }
 
-         [HttpPost]
-        public IActionResult SuaTour(Tour model, List<IFormFile> HinhAnhFiles)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SuaTour(
+            Tour model,
+            List<IFormFile> HinhAnhFiles,
+            decimal? GiaNguoiLon,
+            decimal? GiaTreEm,
+            decimal? GiaEmBe)
 
         {
             if (!LaAdmin()) return NeuKhongPhaiAdmin();
 
             var tour = _context.Tours.Find(model.IdTour);
             if (tour == null) return NotFound();
+
+            if (!GiaNguoiLon.HasValue || GiaNguoiLon.Value < 0)
+                ModelState.AddModelError("GiaNguoiLon", "Giá người lớn không hợp lệ");
+
+            if (!GiaTreEm.HasValue || GiaTreEm.Value < 0)
+                ModelState.AddModelError("GiaTreEm", "Giá trẻ em không hợp lệ");
+
+            if (!GiaEmBe.HasValue || GiaEmBe.Value < 0)
+                ModelState.AddModelError("GiaEmBe", "Giá em bé không hợp lệ");
+
+            if (!ModelState.IsValid)
+            {
+                _context.Entry(tour).Collection(x => x.HinhTours).Load();
+                model.HinhTours = tour.HinhTours;
+                ViewBag.LoaiTours = _context.LoaiTours.OrderBy(x => x.TenLoai).ToList();
+                ViewBag.GiaNguoiLon = GiaNguoiLon ?? 0;
+                ViewBag.GiaTreEm = GiaTreEm ?? 0;
+                ViewBag.GiaEmBe = GiaEmBe ?? 0;
+                return View(model);
+            }
 
             tour.TenTour = model.TenTour;
             tour.DiaDiem = model.DiaDiem;
@@ -364,6 +400,7 @@ namespace TourWebApp.Controllers
                 tour.GiaKhuyenMai = model.GiaGoc - (model.GiaGoc * model.PhanTramGiam / 100);
 
             
+            var uploadedImagePaths = new List<string>();
             if (HinhAnhFiles != null && HinhAnhFiles.Count > 0)
             {
                 foreach (var file in HinhAnhFiles)
@@ -375,6 +412,8 @@ namespace TourWebApp.Controllers
                     {
                         file.CopyTo(stream);
                     }
+
+                    uploadedImagePaths.Add(path);
 
                     _context.HinhTours.Add(new HinhTour
                     {
@@ -391,46 +430,72 @@ namespace TourWebApp.Controllers
                 tour.HinhAnh = thumbnail;
             }
           
-            var giaNguoiLon = Convert.ToDecimal(Request.Form["GiaNguoiLon"]);
-            var giaTreEm    = Convert.ToDecimal(Request.Form["GiaTreEm"]);
-            var giaEmBe     = Convert.ToDecimal(Request.Form["GiaEmBe"]);
+            var giaNguoiLon = GiaNguoiLon.GetValueOrDefault();
+            var giaTreEm = GiaTreEm.GetValueOrDefault();
+            var giaEmBe = GiaEmBe.GetValueOrDefault();
 
             
-            var oldPrices = _context.TourGiaChiTiets
-                                    .Where(x => x.IdTour == tour.IdTour)
-                                    .ToList();
-
-            _context.TourGiaChiTiets.RemoveRange(oldPrices);
-            _context.SaveChanges();
-
-          
-            var newPriceList = new List<TourGiaChiTiet>
+            using var transaction = _context.Database.BeginTransaction();
+            try
             {
-                new TourGiaChiTiet
-                {
-                    IdTour = tour.IdTour,
-                    DoiTuong = "Người lớn",
-                    Gia = giaNguoiLon,
-                    GhiChu = "Giá cố định"
-                },
-                new TourGiaChiTiet
-                {
-                    IdTour = tour.IdTour,
-                    DoiTuong = "Trẻ em",
-                    Gia = giaTreEm,
-                    GhiChu = "Giá cố định"
-                },
-                new TourGiaChiTiet
-                {
-                    IdTour = tour.IdTour,
-                    DoiTuong = "Em bé",
-                    Gia = giaEmBe,
-                    GhiChu = "Giá cố định"
-                }
-            };
+                var oldPrices = _context.TourGiaChiTiets
+                    .Where(x => x.IdTour == tour.IdTour)
+                    .ToList();
 
-            _context.TourGiaChiTiets.AddRange(newPriceList);
-            _context.SaveChanges();
+                _context.TourGiaChiTiets.RemoveRange(oldPrices);
+                _context.SaveChanges();
+
+                var newPriceList = new List<TourGiaChiTiet>
+                {
+                    new()
+                    {
+                        IdTour = tour.IdTour,
+                        DoiTuong = TourPriceAudience.Adult,
+                        Gia = giaNguoiLon,
+                        GhiChu = "Giá cố định"
+                    },
+                    new()
+                    {
+                        IdTour = tour.IdTour,
+                        DoiTuong = TourPriceAudience.Child,
+                        Gia = giaTreEm,
+                        GhiChu = "Giá cố định"
+                    },
+                    new()
+                    {
+                        IdTour = tour.IdTour,
+                        DoiTuong = TourPriceAudience.Infant,
+                        Gia = giaEmBe,
+                        GhiChu = "Giá cố định"
+                    }
+                };
+
+                _context.TourGiaChiTiets.AddRange(newPriceList);
+                _context.SaveChanges();
+                transaction.Commit();
+            }
+            catch (DbUpdateException)
+            {
+                transaction.Rollback();
+                foreach (var path in uploadedImagePaths.Where(System.IO.File.Exists))
+                {
+                    System.IO.File.Delete(path);
+                }
+
+                _context.ChangeTracker.Clear();
+                var currentTour = _context.Tours
+                    .Include(x => x.HinhTours)
+                    .Include(x => x.TourGiaChiTiets)
+                    .FirstOrDefault(x => x.IdTour == model.IdTour);
+
+                ModelState.AddModelError(string.Empty, "Không thể cập nhật tour và bảng giá. Vui lòng kiểm tra dữ liệu rồi thử lại.");
+                ViewBag.LoaiTours = _context.LoaiTours.OrderBy(x => x.TenLoai).ToList();
+                ViewBag.GiaNguoiLon = currentTour?.TourGiaChiTiets.FirstOrDefault(x => TourPriceAudience.IsAdult(x.DoiTuong))?.Gia ?? giaNguoiLon;
+                ViewBag.GiaTreEm = currentTour?.TourGiaChiTiets.FirstOrDefault(x => TourPriceAudience.IsChild(x.DoiTuong))?.Gia ?? giaTreEm;
+                ViewBag.GiaEmBe = currentTour?.TourGiaChiTiets.FirstOrDefault(x => TourPriceAudience.IsInfant(x.DoiTuong))?.Gia ?? giaEmBe;
+                return View(currentTour ?? model);
+            }
+
             TempData["ThongBao"] = "✅ Đã cập nhật tour";
             return RedirectToAction("QuanLyTour");
         }
