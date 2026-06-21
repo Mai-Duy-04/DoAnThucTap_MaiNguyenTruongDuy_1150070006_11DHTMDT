@@ -13,9 +13,6 @@ using iText.IO.Image;
 using iText.Kernel.Font;
 using iText.IO.Font;
 
-
-
-
 namespace TourWebApp.Controllers
 {
     public class QuanTriController : Controller
@@ -41,35 +38,73 @@ namespace TourWebApp.Controllers
         }
 
         // ========== DASHBOARD ==========
-        public IActionResult Dashboard()
+        public IActionResult Dashboard(string period = "month")
         {
             if (!LaAdmin()) return NeuKhongPhaiAdmin();
 
-            ViewBag.TongTour = _context.Tours.Count();
-            ViewBag.TourDangBan = _context.Tours.Count(t => t.TrangThai == true);
-            ViewBag.TourNgungBan = _context.Tours.Count(t => t.TrangThai == false);
+            var now = DateTime.Now;
+            DateTime startDate;
 
-            ViewBag.TongDon = _context.DonDatTours.Count();
+            period = (period ?? "month").ToLower();
 
-            ViewBag.TongNguoiDung = _context.TaiKhoans
-                                            .Count(t => t.VaiTro == "User");
+            switch (period)
+            {
+                case "day":
+                    startDate = now.Date;
+                    break;
 
-       
-            ViewBag.TopTour = _context.Tours
-                                    .OrderByDescending(t => t.SoNguoiDaDat)
-                                    .Take(3)
-                                    .ToList();
+                case "week":
+                    startDate = now.Date.AddDays(-6);
+                    break;
 
-        
-            ViewBag.SoDonDaThanhToan = _context.DonDatTours.Count(d => d.DaThanhToan);
-            ViewBag.SoDonChuaThanhToan = _context.DonDatTours.Count(d => !d.DaThanhToan);
-            ViewBag.SoDonHetHan = _context.DonDatTours.Count(d =>
-                d.HanThanhToan != null && d.HanThanhToan < DateTime.Now
-            );
+                case "quarter":
+                    startDate = now.Date.AddMonths(-2);
+                    break;
 
-          
-            var dataNgayRaw = _context.DonDatTours
+                case "year":
+                    startDate = new DateTime(now.Year, 1, 1);
+                    break;
+
+                case "month":
+                default:
+                    period = "month";
+                    startDate = new DateTime(now.Year, now.Month, 1);
+                    break;
+            }
+
+            var validOrders = _context.DonDatTours
                 .AsNoTracking()
+                .Where(d => d.TrangThai != "DaHuy" && d.TrangThai != "Đã hủy");
+
+            var filteredOrders = validOrders
+                .Where(d => d.NgayDat >= startDate && d.NgayDat <= now);
+
+            var filteredPaidOrders = filteredOrders
+                .Where(d => d.DaThanhToan);
+
+            ViewBag.Period = period;
+
+            ViewBag.TongTour = _context.Tours.Count();
+            ViewBag.TourDangBan = _context.Tours.Count(t => t.TrangThai);
+
+            ViewBag.TongDon = filteredOrders.Count();
+
+            ViewBag.TongDoanhThu = filteredPaidOrders
+                .Sum(d => (decimal?)((d.TongTienSauGiam ?? d.TongTien))) ?? 0m;
+
+            ViewBag.TongKhach = filteredOrders
+                .Sum(d => (int?)(d.NguoiLon + d.TreEm + d.TreNho)) ?? 0;
+
+            ViewBag.TopTour = _context.Tours
+                .AsNoTracking()
+                .Include(t => t.HinhTours)
+                .Where(t => t.TrangThai)
+                .OrderByDescending(t => t.SoNguoiDaDat)
+                .ThenByDescending(t => t.LuotXem)
+                .Take(3)
+                .ToList();
+
+            var revenueRaw = filteredPaidOrders
                 .GroupBy(d => new { d.NgayDat.Year, d.NgayDat.Month, d.NgayDat.Day })
                 .OrderBy(g => g.Key.Year)
                 .ThenBy(g => g.Key.Month)
@@ -79,59 +114,42 @@ namespace TourWebApp.Controllers
                     g.Key.Year,
                     g.Key.Month,
                     g.Key.Day,
-                    SoDon = g.Count()
+                    DoanhThu = g.Sum(x => (decimal?)((x.TongTienSauGiam ?? x.TongTien))) ?? 0m
                 })
                 .ToList();
 
-            var dataNgay = dataNgayRaw
-                .Select(x => new
-                {
-                    Ngay = new DateTime(x.Year, x.Month, x.Day).ToString("dd/MM"),
-                    x.SoDon
-                })
+            ViewBag.LabelDoanhThu = revenueRaw
+                .Select(x => new DateTime(x.Year, x.Month, x.Day).ToString("dd/MM"))
                 .ToList();
-            ViewBag.LabelNgay = dataNgay.Select(x => x.Ngay).ToList();
-            ViewBag.DataNgay = dataNgay.Select(x => x.SoDon).ToList();
 
-            var donPaid = _context.DonDatTours
-                .AsNoTracking()
-                .Where(d => d.DaThanhToan && d.TrangThai != "DaHuy" && d.TrangThai != "Đã hủy");
+            ViewBag.DataDoanhThu = revenueRaw
+                .Select(x => x.DoanhThu)
+                .ToList();
 
-            ViewBag.TongDoanhThu = donPaid.Sum(d => d.TongTien);
-            ViewBag.TongKhach = donPaid.Sum(d => (int?)(d.NguoiLon + d.TreEm + d.TreNho)) ?? 0;
-
-
-            var now = DateTime.Now;
-            var start14 = now.Date.AddDays(-13);
-
-           var doanhThuNgayRaw = donPaid
-                .Where(d => d.NgayDat >= start14 && d.NgayDat <= now)
+            var customerRaw = filteredOrders
                 .GroupBy(d => new { d.NgayDat.Year, d.NgayDat.Month, d.NgayDat.Day })
-                .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month).ThenBy(g => g.Key.Day)
+                .OrderBy(g => g.Key.Year)
+                .ThenBy(g => g.Key.Month)
+                .ThenBy(g => g.Key.Day)
                 .Select(g => new
                 {
                     g.Key.Year,
                     g.Key.Month,
                     g.Key.Day,
-                 DoanhThu = g.Sum(x => (decimal?)x.TongTien) ?? 0m
+                    SoKhach = g.Sum(x => x.NguoiLon + x.TreEm + x.TreNho)
                 })
                 .ToList();
 
-
-            var doanhThuNgay = doanhThuNgayRaw
-                .Select(x => new
-                {
-                    Ngay = new DateTime(x.Year, x.Month, x.Day).ToString("dd/MM"),
-                    x.DoanhThu
-                })
+            ViewBag.LabelKhach = customerRaw
+                .Select(x => new DateTime(x.Year, x.Month, x.Day).ToString("dd/MM"))
                 .ToList();
 
-            ViewBag.LabelDoanhThuNgay = doanhThuNgay.Select(x => x.Ngay).ToList();
-            ViewBag.DataDoanhThuNgay = doanhThuNgay.Select(x => x.DoanhThu).ToList();
+            ViewBag.DataKhach = customerRaw
+                .Select(x => x.SoKhach)
+                .ToList();
 
             return View();
         }
-
 
         // ========== DANH SÁCH TOUR ==========
         [HttpGet]

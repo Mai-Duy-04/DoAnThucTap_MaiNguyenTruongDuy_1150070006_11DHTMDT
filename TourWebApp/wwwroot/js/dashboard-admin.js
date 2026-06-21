@@ -1,153 +1,134 @@
-// LOADING FAKE
-window.addEventListener("load", () => {
-    setTimeout(() => {
-        document.getElementById("loadingScreen").style.display = "none";
-    }, 700);
-});
-
-// ANIMATION ĐẾM SỐ
-document.querySelectorAll('.counter').forEach(counter => {
-    const target = +counter.dataset.count;
+document.querySelectorAll(".counter").forEach(counter => {
+    const target = Number(counter.dataset.count || 0);
     let current = 0;
-    const step = Math.ceil(target / 60);
+    const step = Math.max(1, Math.ceil(target / 60));
 
     const run = setInterval(() => {
         current += step;
+
         if (current >= target) {
-            counter.textContent = target;
+            counter.textContent = target.toLocaleString("vi-VN");
             clearInterval(run);
         } else {
-            counter.textContent = current;
+            counter.textContent = current.toLocaleString("vi-VN");
         }
-    }, 20);
+    }, 18);
 });
 
-// BIỂU ĐỒ TRẠNG THÁI
-const chartEl = document.getElementById('chartTrangThai');
+const moneyFormat = value => {
+    return Number(value || 0).toLocaleString("vi-VN") + " đ";
+};
 
-if (chartEl) {
-    const dangBan = chartEl.dataset.dangban;
-    const ngungBan = chartEl.dataset.ngungban;
+const chartDoanhThu = document.getElementById("chartDoanhThu");
 
-    new Chart(chartEl, {
-        type: 'doughnut',
-        data: {
-            labels: ['Đang bán', 'Ngưng bán'],
-            datasets: [{
-                data: [dangBan, ngungBan],
-                backgroundColor: ['#2ecc71','#e74c3c'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            cutout: '70%',
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-}
-// ================= BIỂU ĐỒ CỘT: ĐƠN THEO TRẠNG THÁI THANH TOÁN =================
-const ctxDonTrangThai = document.getElementById('chartDonTrangThai');
-
-if (ctxDonTrangThai) {
-    new Chart(ctxDonTrangThai, {
-        type: 'bar',
-        data: {
-            labels: ['Đã thanh toán', 'Chưa thanh toán', 'Hết hạn'],
-            datasets: [{
-                label: 'Số đơn',
-                data: [
-                    window.soDonDaThanhToan || 0,
-                    window.soDonChuaThanhToan || 0,
-                    window.soDonHetHan || 0
-                ],
-                backgroundColor: ['#28a745', '#ffc107', '#6c757d']
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { precision: 0 }
-                }
-            }
-        }
-    });
-}
-
-
-// ================= BIỂU ĐỒ SÓNG: ĐƠN THEO NGÀY =================
-const ctxDonTheoNgay = document.getElementById('chartDonTheoNgay');
-
-if (ctxDonTheoNgay) {
-    new Chart(ctxDonTheoNgay, {
-        type: 'line',
-        data: {
-            labels: window.labelNgay || [],
-            datasets: [{
-                label: 'Số đơn',
-                data: window.dataNgay || [],
-                borderColor: '#0d6efd',
-                backgroundColor: 'rgba(13,110,253,0.15)',
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { precision: 0 }
-                }
-            }
-        }
-    });
-}
-    let doanhThuChart;
-
-document.addEventListener("DOMContentLoaded", function () {
-    const el = document.getElementById("chartDoanhThuNgay");
-    if (!el) return;
-
-    const labels = window.labelDoanhThuNgay || [];
-    const data = window.dataDoanhThuNgay || [];
-
-    if (doanhThuChart) doanhThuChart.destroy();
-
-    doanhThuChart = new Chart(el, {
+if (chartDoanhThu) {
+    new Chart(chartDoanhThu, {
         type: "line",
         data: {
-            labels,
+            labels: window.labelDoanhThu || [],
             datasets: [{
-                label: "Doanh thu (đ)",
-                data,
-                tension: 0.3,
-                fill: true
+                label: "Doanh thu",
+                data: window.dataDoanhThu || [],
+                borderColor: "#4f46e5",
+                backgroundColor: "rgba(79, 70, 229, 0.12)",
+                fill: true,
+                tension: 0.38,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: "#4f46e5",
+                pointBorderColor: "#ffffff",
+                pointBorderWidth: 2
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: true } },
+            interaction: {
+                mode: "index",
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => "Doanh thu: " + moneyFormat(ctx.raw)
+                    }
+                }
+            },
             scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: "#6b7280"
+                    }
+                },
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        callback: (value) => Number(value).toLocaleString("vi-VN") + " đ"
+                        color: "#6b7280",
+                        callback: value => moneyFormat(value)
+                    },
+                    grid: {
+                        color: "rgba(148, 163, 184, 0.22)"
                     }
                 }
             }
         }
     });
-});
+}
+
+const chartKhach = document.getElementById("chartKhach");
+
+if (chartKhach) {
+    new Chart(chartKhach, {
+        type: "bar",
+        data: {
+            labels: window.labelKhach || [],
+            datasets: [{
+                label: "Khách đặt",
+                data: window.dataKhach || [],
+                backgroundColor: "#38bdf8",
+                borderRadius: 12,
+                maxBarThickness: 36
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => "Khách đặt: " + Number(ctx.raw || 0).toLocaleString("vi-VN")
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: "#6b7280"
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0,
+                        color: "#6b7280"
+                    },
+                    grid: {
+                        color: "rgba(148, 163, 184, 0.22)"
+                    }
+                }
+            }
+        }
+    });
+}

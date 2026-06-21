@@ -1,214 +1,166 @@
+@using TourWebApp.Data.Models
 @{
     Layout = "_LayoutAdmin";
+
+    var period = ViewBag.Period as string ?? "month";
+    var topTours = ViewBag.TopTour as IEnumerable<Tour> ?? Enumerable.Empty<Tour>();
+
+    string Active(string value) => period == value ? "active" : "";
 }
 
-<link rel="stylesheet" href="~/css/dashboard-admin.css" />
+<link rel="stylesheet" href="~/css/dashboard-admin.css" asp-append-version="true" />
 
-<h3 class="mb-4 fw-bold">
-    📊 Tổng quan hệ thống HappyTrip
-</h3>
+<div class="dash-page">
 
-<!-- LOADING -->
-<div id="loadingScreen">
-    <div class="spinner"></div>
-    <span>Đang tải dữ liệu...</span>
+    <div class="dash-header">
+        <div>
+            <span class="dash-eyebrow">HappyTrip Analytics</span>
+            <h3>Tổng quan hệ thống</h3>
+            <p>Theo dõi doanh thu, số lượng khách đặt và tour nổi bật.</p>
+        </div>
+
+        <div class="dash-filter">
+            <a class="@Active("day")" href="/QuanTri/Dashboard?period=day">Ngày</a>
+            <a class="@Active("week")" href="/QuanTri/Dashboard?period=week">Tuần</a>
+            <a class="@Active("month")" href="/QuanTri/Dashboard?period=month">Tháng</a>
+            <a class="@Active("quarter")" href="/QuanTri/Dashboard?period=quarter">Quý</a>
+            <a class="@Active("year")" href="/QuanTri/Dashboard?period=year">Năm</a>
+        </div>
+    </div>
+
+    <div class="dash-kpi-grid">
+        <div class="dash-kpi-card">
+            <div>
+                <span>Doanh thu</span>
+                <h2>@string.Format("{0:N0} đ", ViewBag.TongDoanhThu ?? 0)</h2>
+            </div>
+            <i class="fa-solid fa-sack-dollar"></i>
+        </div>
+
+        <div class="dash-kpi-card">
+            <div>
+                <span>Đơn đặt tour</span>
+                <h2 class="counter" data-count="@ViewBag.TongDon">0</h2>
+            </div>
+            <i class="fa-solid fa-receipt"></i>
+        </div>
+
+        <div class="dash-kpi-card">
+            <div>
+                <span>Khách đã đặt</span>
+                <h2 class="counter" data-count="@ViewBag.TongKhach">0</h2>
+            </div>
+            <i class="fa-solid fa-user-group"></i>
+        </div>
+
+        <div class="dash-kpi-card">
+            <div>
+                <span>Tour đang bán</span>
+                <h2 class="counter" data-count="@ViewBag.TourDangBan">0</h2>
+            </div>
+            <i class="fa-solid fa-map-location-dot"></i>
+        </div>
+    </div>
+
+    <div class="dash-chart-grid">
+        <div class="dash-panel">
+            <div class="panel-head">
+                <div>
+                    <h5>Doanh thu theo thời gian</h5>
+                    <p>Thống kê doanh thu theo bộ lọc đang chọn.</p>
+                </div>
+            </div>
+
+            <div class="chart-box chart-big">
+                <canvas id="chartDoanhThu"></canvas>
+            </div>
+        </div>
+
+        <div class="dash-panel">
+            <div class="panel-head">
+                <div>
+                    <h5>Khách đặt theo thời gian</h5>
+                    <p>Số lượng khách đặt tour theo thời gian.</p>
+                </div>
+            </div>
+
+            <div class="chart-box">
+                <canvas id="chartKhach"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="dash-panel">
+        <div class="panel-head">
+            <div>
+                <h5>Top 3 tour nổi bật</h5>
+                <p>Tour có số người đặt cao nhất.</p>
+            </div>
+        </div>
+
+        <div class="top-tour-list">
+          @foreach (var t in topTours)
+                {
+                    var firstImage = t.HinhTours
+                        .Where(h => !string.IsNullOrWhiteSpace(h.UrlHinh))
+                        .OrderBy(h => h.ThuTu ?? 999)
+                        .FirstOrDefault();
+
+                    var img = "/images/default-tour.jpg";
+
+                    if (firstImage != null)
+                    {
+                        img = firstImage.UrlHinh.Trim();
+
+                        if (img.StartsWith("~/"))
+                        {
+                            img = img.Replace("~", "");
+                        }
+                        else if (!img.StartsWith("/") && !img.StartsWith("http"))
+                        {
+                            img = "/img/tours/hinhtour/" + img;
+                        }
+                    }
+
+                    <div class="top-tour-item">
+
+                        <img src="@img"
+                            alt=""
+                            onerror="this.style.border='3px solid red';" />
+
+                        <div class="tour-info">
+
+                            <strong>@t.TenTour</strong>
+
+                            <span>
+                                <i class="fa-solid fa-location-dot"></i>
+                                @t.DiaDiem
+                            </span>
+
+                            <small>
+                                <i class="fa-solid fa-user-group"></i>
+                                @t.SoNguoiDaDat người đặt
+
+                                &nbsp;&nbsp;
+
+                                <i class="fa-solid fa-eye"></i>
+                                @t.LuotXem lượt xem
+                            </small>               
+                        </div>
+                    </div>
+                }
+        </div>
+    </div>
+
 </div>
 
-<div class="row g-4 mb-3">
-    <div class="col-12 col-md-6 col-xl-3">
-        <div class="card stat-card bg-blue text-white shadow-sm h-100">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <small class="text-black-50">Tổng tour</small>
-                    <h2 class="fw-bold mb-0 counter" data-count="@ViewBag.TongTour">0</h2>
-                </div>
-                <i class="fa fa-map-location-dot fa-2x"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-xl-3">
-        <div class="card stat-card bg-green text-white shadow-sm h-100">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <small class="text-white-50">Tour đang bán</small>
-                    <h2 class="fw-bold mb-0 counter" data-count="@ViewBag.TourDangBan">0</h2>
-                </div>
-                <i class="fa fa-check-circle fa-2x"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-xl-3">
-        <div class="card stat-card bg-gray text-white shadow-sm h-100">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <small class="text-white-50">Tour ngưng bán</small>
-                    <h2 class="fw-bold mb-0 counter" data-count="@ViewBag.TourNgungBan">0</h2>
-                </div>
-                <i class="fa fa-pause-circle fa-2x"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-xl-3">
-        <div class="card stat-card bg-red text-white shadow-sm h-100">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <small class="text-white-50">Đơn đặt tour</small>
-                    <h2 class="fw-bold mb-0 counter" data-count="@ViewBag.TongDon">0</h2>
-                </div>
-                <i class="fa fa-receipt fa-2x"></i>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4 mb-4">
-    <div class="col-12 col-md-6 col-xl-3">
-        <div class="card stat-card bg-purple text-white shadow-sm h-100">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <small class="text-white-50">Tổng doanh thu</small>
-                    <h4 class="fw-bold mb-0">@string.Format("{0:N0} đ", ViewBag.TongDoanhThu ?? 0)</h4>
-                </div>
-                <i class="fa fa-sack-dollar fa-2x"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-xl-3">
-        <div class="card stat-card bg-orange text-white shadow-sm h-100">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <small class="text-white-50">Tổng khách đã đặt</small>
-                    <h2 class="fw-bold mb-0">@(ViewBag.TongKhach ?? 0)</h2>
-                </div>
-                <i class="fa fa-user-group fa-2x"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-xl-3">
-        <div class="card stat-card bg-gray text-white shadow-sm h-100">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <small class="text-white-50">Tổng người dùng</small>
-                    <h2 class="fw-bold mb-0">@ViewBag.TongNguoiDung</h2>
-                </div>
-                <i class="fa fa-users fa-2x"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-md-6 col-xl-3">
-        <div class="card stat-card bg-green text-white shadow-sm h-100">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <small class="text-white-50">Đơn đã thanh toán</small>
-                    <h2 class="fw-bold mb-0">@ViewBag.SoDonDaThanhToan</h2>
-                </div>
-                <i class="fa fa-circle-check fa-2x"></i>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card shadow-sm p-3 chart-card">
-            <h6 class="fw-bold mb-3">💰 Doanh thu 14 ngày gần nhất</h6>
-            <div class="chart-wrapper chart-big">
-                <canvas id="chartDoanhThuNgay"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card shadow-sm p-3 chart-card">
-            <h6 class="fw-bold mb-3">📈 Tình trạng tour</h6>
-
-            <div class="chart-wrapper">
-                <canvas id="chartTrangThai"
-                        data-dangban="@ViewBag.TourDangBan"
-                        data-ngungban="@ViewBag.TourNgungBan"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card shadow-sm p-3 chart-card">
-            <h6 class="fw-bold mb-3">📊 Đơn đặt tour theo trạng thái thanh toán</h6>
-            <div class="chart-wrapper">
-                <canvas id="chartDonTrangThai"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6">
-        <div class="card shadow-sm p-3 chart-card">
-            <h6 class="fw-bold mb-3">📈 Xu hướng đặt tour theo ngày</h6>
-            <div class="chart-wrapper">
-                <canvas id="chartDonTheoNgay"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<hr class="my-4" />
-
-<h5 class="fw-bold mb-3">🔥 Top 3 tour được đặt nhiều nhất</h5>
-
-<table class="table table-hover align-middle">
-    <thead class="table-light">
-        <tr>
-            <th>Tour</th>
-            <th>Địa điểm</th>
-            <th>Số người đặt</th>
-            <th>Mức độ hot</th>
-        </tr>
-    </thead>
-
-@{
-    var topTours = ViewBag.TopTour as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
-    int max = topTours.Any() ? topTours.Max(t => (int)t.SoNguoiDaDat) : 0;
-}
-
-<tbody>
-@foreach (var t in topTours)
-{
-    int percent = max == 0 ? 0 : (int)((double)t.SoNguoiDaDat / max * 100);
-
-    <tr>
-        <td>@t.TenTour</td>
-        <td>@t.DiaDiem</td>
-        <td>
-            <span class="badge bg-primary">@t.SoNguoiDaDat người</span>
-        </td>
-        <td style="width:30%">
-            <div class="progress" style="height:8px;">
-                <div class="progress-bar bg-success" style="width:@percent%"></div>
-            </div>
-        </td>
-    </tr>
-}
-</tbody>
-</table>
 <script>
-    window.soDonDaThanhToan = @ViewBag.SoDonDaThanhToan;
-    window.soDonChuaThanhToan = @ViewBag.SoDonChuaThanhToan;
-    window.soDonHetHan = @ViewBag.SoDonHetHan;
+    window.labelDoanhThu = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.LabelDoanhThu ?? new List<string>()));
+    window.dataDoanhThu = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.DataDoanhThu ?? new List<decimal>()));
 
-    window.labelDoanhThuNgay = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.LabelDoanhThuNgay ?? new List<string>()));
-    window.dataDoanhThuNgay  = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.DataDoanhThuNgay ?? new List<decimal>()));
-
-    window.labelNgay = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.LabelNgay ?? new List<string>()));
-    window.dataNgay  = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.DataNgay ?? new List<int>()));
+    window.labelKhach = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.LabelKhach ?? new List<string>()));
+    window.dataKhach = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.DataKhach ?? new List<int>()));
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="~/js/dashboard-admin.js"></script>
+<script src="~/js/dashboard-admin.js" asp-append-version="true"></script>
