@@ -60,7 +60,8 @@ namespace TourWebApp.Controllers
             return _db.LichKhoiHanhs
                 .Where(l => l.IdTour == idTour &&
                             l.NgayKhoiHanh >= DateOnly.FromDateTime(DateTime.Now))
-                .OrderBy(l => l.NgayKhoiHanh)
+                .OrderBy(l => l.SoChoConLai > 0 ? 0 : 1)
+                .ThenBy(l => l.NgayKhoiHanh)
                 .ThenBy(l => l.GioKhoiHanh)
                 .FirstOrDefault();
         }
@@ -266,8 +267,9 @@ namespace TourWebApp.Controllers
 
             // LICH GAN NHAT
             ViewBag.LichGanNhat = _db.LichKhoiHanhs
-                .Where(l => l.IdTour == id)
-                .OrderBy(l => l.NgayKhoiHanh)
+                .Where(l => l.IdTour == id && l.NgayKhoiHanh >= DateOnly.FromDateTime(DateTime.Today))
+                .OrderBy(l => l.SoChoConLai > 0 ? 0 : 1)
+                .ThenBy(l => l.NgayKhoiHanh)
                 .ThenBy(l => l.GioKhoiHanh)
                 .FirstOrDefault();
 

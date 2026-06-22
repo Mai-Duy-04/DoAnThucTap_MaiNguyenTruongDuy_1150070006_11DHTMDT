@@ -1,0 +1,70 @@
+@model List<TourWebApp.Models.ViewModels.DanhSachChoAdminVM>
+@{
+    ViewData["Title"] = "Danh sách chờ";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h3 class="mb-1"><i class="fa-solid fa-list-ol"></i> Danh sách khách chờ chỗ</h3>
+        <p class="text-muted mb-0">Khách đăng ký khi lịch khởi hành đã full slot.</p>
+    </div>
+    <a asp-action="DanhSachLich" class="btn btn-outline-primary">Quản lý lịch</a>
+</div>
+
+@if (TempData["ThongBao"] != null)
+{
+    <div class="alert alert-success">@TempData["ThongBao"]</div>
+}
+
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Khách hàng</th>
+                    <th>Tour / lịch</th>
+                    <th>Số khách</th>
+                    <th>Đăng ký lúc</th>
+                    <th>Trạng thái</th>
+                    <th>Cập nhật</th>
+                </tr>
+            </thead>
+            <tbody>
+            @if (!Model.Any())
+            {
+                <tr><td colspan="6" class="text-center text-muted py-5">Chưa có khách trong danh sách chờ.</td></tr>
+            }
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        <strong>@item.HoTen</strong><br />
+                        <small>@item.SoDienThoai · @item.Email</small>
+                    </td>
+                    <td>
+                        <strong>@item.TenTour</strong><br />
+                        <small>Lịch @item.NgayKhoiHanh.ToString("dd/MM/yyyy")</small>
+                    </td>
+                    <td><span class="badge bg-primary">@item.SoKhach</span></td>
+                    <td>@item.NgayDangKy.ToString("HH:mm dd/MM/yyyy")</td>
+                    <td><span class="badge @(item.TrangThai == "Đang chờ" ? "bg-warning text-dark" : "bg-secondary")">@item.TrangThai</span></td>
+                    <td>
+                        <form asp-action="CapNhatDanhSachCho" method="post" class="d-flex gap-2">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.IdDanhSachCho" />
+                            <select name="trangThai" class="form-select form-select-sm">
+                                @foreach (var status in new[] { "Đang chờ", "Đã thông báo", "Đã liên hệ", "Đã đặt", "Đã hủy" })
+                                {
+                                    <option value="@status" selected="@(item.TrangThai == status)">@status</option>
+                                }
+                            </select>
+                            <button class="btn btn-sm btn-primary" type="submit">Lưu</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

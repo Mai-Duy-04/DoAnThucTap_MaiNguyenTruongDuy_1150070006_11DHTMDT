@@ -101,7 +101,13 @@ function initScheduleSelection() {
         if (trangThaiEl) trangThaiEl.textContent = trangThai;
         if (soChoEl) soChoEl.textContent = soCho;
 
+        const calcBox = document.querySelector(".tour-calc-box");
+        if (calcBox) calcBox.dataset.remaining = soCho;
+        const waitlistScheduleId = document.getElementById("waitlistScheduleId");
+        if (waitlistScheduleId) waitlistScheduleId.value = row.dataset.idlich || "";
+
         updateKetThuc(ngay);
+        updateSeatAvailability();
     }
 
     rows.forEach(function (row) {
@@ -203,6 +209,9 @@ function initCalculator() {
 
         if (totalAmountEl) totalAmountEl.textContent = formatMoney(total);
         if (totalGuestEl) totalGuestEl.textContent = String(guest);
+        const waitlistGuestCount = document.getElementById("waitlistGuestCount");
+        if (waitlistGuestCount) waitlistGuestCount.value = String(Math.max(1, guest));
+        updateSeatAvailability();
     }
 
     function bindQty(minusId, inputEl, plusId) {
@@ -230,6 +239,35 @@ function initCalculator() {
     bindQty("babyMinus", babyInput, "babyPlus");
 
     recalc();
+}
+
+function updateSeatAvailability() {
+    const calcBox = document.querySelector(".tour-calc-box");
+    if (!calcBox) return;
+
+    const remaining = Math.max(0, parseInt(calcBox.dataset.remaining || "0", 10) || 0);
+    const adult = Math.max(0, parseInt(document.getElementById("adultQty")?.value || "0", 10) || 0);
+    const child = Math.max(0, parseInt(document.getElementById("childQty")?.value || "0", 10) || 0);
+    const baby = Math.max(0, parseInt(document.getElementById("babyQty")?.value || "0", 10) || 0);
+    const guests = adult + child + baby;
+    const full = remaining <= 0;
+    const insufficient = !full && guests > remaining;
+
+    const bookingButton = document.getElementById("bookingButton");
+    const waitlistForm = document.getElementById("waitlistForm");
+    const warning = document.getElementById("seatWarning");
+
+    if (bookingButton) bookingButton.disabled = full || insufficient || guests <= 0;
+    waitlistForm?.classList.toggle("d-none", !full);
+
+    if (warning) {
+        warning.classList.toggle("d-none", !(full || insufficient || remaining <= 5));
+        warning.textContent = full
+            ? "Lịch đã hết chỗ. Bạn có thể tham gia danh sách chờ."
+            : insufficient
+                ? `Chỉ còn ${remaining} chỗ, không đủ cho ${guests} khách.`
+                : `Sắp hết chỗ — lịch này chỉ còn ${remaining} chỗ.`;
+    }
 }
 
 function initSortComments() {
@@ -271,9 +309,16 @@ function goToBooking() {
     const babyPrice = parseInt(calcBox.dataset.baby || "0", 10) || 0;
 
     const total = adult * adultPrice + child * childPrice + baby * babyPrice;
+    const remaining = Math.max(0, parseInt(calcBox.dataset.remaining || "0", 10) || 0);
+    const guests = adult + child + baby;
 
     if (!idLich) {
         alert("Vui lòng chọn lịch khởi hành!");
+        return;
+    }
+
+    if (remaining <= 0 || guests > remaining) {
+        updateSeatAvailability();
         return;
     }
 

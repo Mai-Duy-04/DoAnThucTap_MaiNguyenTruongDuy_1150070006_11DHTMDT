@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using ClosedXML.Excel;
 using TourWebApp.Data.Models;
 using TourWebApp.Models;
+using TourWebApp.Services;
 
 namespace TourWebApp.Controllers
 {
@@ -11,15 +12,17 @@ namespace TourWebApp.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IDataProtector _checkinProtector;
+        private readonly ISeatInventoryService _seatInventory;
 
         private const string VoucherStatusHold = "GiuCho";
         private const string VoucherStatusUsed = "DaSuDung";
         private const string VoucherStatusCancelled = "DaHuy";
 
-        public QuanLyDonController(ApplicationDbContext context, IDataProtectionProvider dataProtectionProvider)
+        public QuanLyDonController(ApplicationDbContext context, IDataProtectionProvider dataProtectionProvider, ISeatInventoryService seatInventory)
         {
             _context = context;
             _checkinProtector = dataProtectionProvider.CreateProtector("HappyTrip.CheckInQrToken.v1");
+            _seatInventory = seatInventory;
         }
 
         private bool IsAdmin()
@@ -238,6 +241,7 @@ namespace TourWebApp.Controllers
             ThuHoiLuotPhieuNeuCan(don, "Admin huy don", xoaBanGhiSuDung: false);
 
             _context.SaveChanges();
+            _seatInventory.SynchronizeAsync(don.IdLich, don.IdTour).GetAwaiter().GetResult();
 
             TempData["Success"] = "Da huy don.";
             return RedirectToAction("ChiTiet", new { id });
@@ -296,6 +300,7 @@ namespace TourWebApp.Controllers
             }
 
             _context.SaveChanges();
+            _seatInventory.SynchronizeAsync(don.IdLich, don.IdTour).GetAwaiter().GetResult();
 
             TempData["Success"] = "Da xac nhan don cho thu tien mat thanh cong.";
             return RedirectToAction("ChiTiet", new { id });
@@ -327,8 +332,11 @@ namespace TourWebApp.Controllers
                 _context.ThongBaos.RemoveRange(thongBaos);
             }
 
+            var idLich = don.IdLich;
+            var idTour = don.IdTour;
             _context.DonDatTours.Remove(don);
             _context.SaveChanges();
+            _seatInventory.SynchronizeAsync(idLich, idTour).GetAwaiter().GetResult();
 
             TempData["Success"] = "Da xoa don chua thanh toan.";
             return RedirectToAction("Index");

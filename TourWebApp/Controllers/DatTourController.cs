@@ -9,6 +9,7 @@ using TourWebApp.Services;
 using VNPAY;
 using VNPAY.Models.Enums;
 using VNPAY.Models.Exceptions;
+using System.Data;
 
 namespace TourWebApp.Controllers
 {
@@ -21,12 +22,13 @@ namespace TourWebApp.Controllers
         private readonly ILogger<DatTourController> _logger;
         private readonly IDataProtector _checkinProtector;
         private readonly IEmailService _emailService;
+        private readonly ISeatInventoryService _seatInventory;
 
         private const string VoucherStatusHold = "GiuCho";
         private const string VoucherStatusUsed = "DaSuDung";
         private const string VoucherStatusCancelled = "DaHuy";
 
-        public DatTourController(ApplicationDbContext db, IVnpayClient vnpayClient, IConfiguration configuration, IWebHostEnvironment environment, ILogger<DatTourController> logger, IDataProtectionProvider dataProtectionProvider, IEmailService emailService)
+        public DatTourController(ApplicationDbContext db, IVnpayClient vnpayClient, IConfiguration configuration, IWebHostEnvironment environment, ILogger<DatTourController> logger, IDataProtectionProvider dataProtectionProvider, IEmailService emailService, ISeatInventoryService seatInventory)
         {
             _db = db;
             _vnpayClient = vnpayClient;
@@ -35,6 +37,7 @@ namespace TourWebApp.Controllers
             _logger = logger;
             _checkinProtector = dataProtectionProvider.CreateProtector("HappyTrip.CheckInQrToken.v1");
             _emailService = emailService;
+            _seatInventory = seatInventory;
         }
 
         [HttpGet]
@@ -64,6 +67,16 @@ namespace TourWebApp.Controllers
             }
 
             NormalizeGuestCounts(ref adult, ref child, ref baby);
+
+            var soKhach = _seatInventory.CountGuests(adult, child, baby);
+            var soChoConLai = _seatInventory.GetRemainingSeatsAsync(lich.IdLich).GetAwaiter().GetResult();
+            if (lich.NgayKhoiHanh < DateOnly.FromDateTime(DateTime.Today) || soChoConLai < soKhach)
+            {
+                TempData["Error"] = soChoConLai <= 0
+                    ? "Lịch khởi hành này đã hết chỗ. Bạn có thể đăng ký danh sách chờ."
+                    : $"Lịch này chỉ còn {soChoConLai} chỗ, không đủ cho {soKhach} khách.";
+                return RedirectToAction("ChiTiet", "Tour", new { id = idTour });
+            }
 
             var gia = TinhGiaDatTour(tour, adult, child, baby);
 
@@ -155,9 +168,24 @@ namespace TourWebApp.Controllers
                 model.MaPhieuGiamGia = phieu.MaPhieu;
             }
 
-            using var transaction = _db.Database.BeginTransaction();
+            using var transaction = _db.Database.BeginTransaction(IsolationLevel.Serializable);
             try
             {
+                // Recheck inside a serializable transaction: two customers cannot take
+                // the same last seats even when they submit at exactly the same time.
+                var soKhach = _seatInventory.CountGuests(model.NguoiLon, model.TreEm, model.EmBe);
+                var soChoConLai = _seatInventory.GetRemainingSeatsAsync(lich.IdLich).GetAwaiter().GetResult();
+                if (lich.NgayKhoiHanh < DateOnly.FromDateTime(DateTime.Today) || soChoConLai < soKhach)
+                {
+                    transaction.Rollback();
+                    ViewBag.User = _db.TaiKhoans.FirstOrDefault(x => x.IdTaiKhoan == userId);
+                    ViewBag.DanhSachMaPhieuDaLuu = LayMaPhieuDaLuu(userId);
+                    ModelState.AddModelError(string.Empty, soChoConLai <= 0
+                        ? "Lịch khởi hành đã hết chỗ. Vui lòng đăng ký danh sách chờ."
+                        : $"Lịch khởi hành chỉ còn {soChoConLai} chỗ, không đủ cho {soKhach} khách.");
+                    return View("NhapThongTin", model);
+                }
+
                 var don = new DonDatTour
                 {
                     MaBooking = TaoMaBooking(),
@@ -182,6 +210,9 @@ namespace TourWebApp.Controllers
                 _db.SaveChanges();
 
                 _db.Entry(don).Reload();
+
+                // Creating either a cash or online order immediately holds the seats.
+                _seatInventory.SynchronizeAsync(don.IdLich, don.IdTour).GetAwaiter().GetResult();
 
                 if (phieu != null)
                 {
@@ -243,6 +274,57 @@ namespace TourWebApp.Controllers
             }
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ThamGiaDanhSachCho(int idLich, int soKhach = 1)
+        {
+            var userId = HttpContext.Session.GetInt32("IdTaiKhoan");
+            if (userId == null)
+            {
+                return RedirectToAction("DangNhap", "TaiKhoan");
+            }
+
+            var lich = _db.LichKhoiHanhs.AsNoTracking().FirstOrDefault(x => x.IdLich == idLich);
+            if (lich == null) return NotFound();
+
+            var soChoConLai = _seatInventory.GetRemainingSeatsAsync(idLich).GetAwaiter().GetResult();
+            if (soChoConLai > 0)
+            {
+                TempData["Info"] = $"Lịch này vừa có lại {soChoConLai} chỗ, bạn có thể đặt ngay.";
+                return RedirectToAction("ChiTiet", "Tour", new { id = lich.IdTour });
+            }
+
+            // This project uses an existing database without EF migrations. Create the
+            // small wait-list table safely on first use and keep one row/user/schedule.
+            _db.Database.ExecuteSqlRaw(@"
+IF OBJECT_ID(N'dbo.DanhSachCho', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.DanhSachCho (
+        IdDanhSachCho INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        IdLich INT NOT NULL,
+        IdTaiKhoan INT NOT NULL,
+        SoKhach INT NOT NULL CONSTRAINT DF_DanhSachCho_SoKhach DEFAULT(1),
+        NgayDangKy DATETIME2 NOT NULL CONSTRAINT DF_DanhSachCho_NgayDangKy DEFAULT(GETDATE()),
+        TrangThai NVARCHAR(20) NOT NULL CONSTRAINT DF_DanhSachCho_TrangThai DEFAULT(N'Đang chờ'),
+        CONSTRAINT FK_DanhSachCho_Lich FOREIGN KEY (IdLich) REFERENCES dbo.LichKhoiHanh(IdLich),
+        CONSTRAINT FK_DanhSachCho_TaiKhoan FOREIGN KEY (IdTaiKhoan) REFERENCES dbo.TaiKhoan(IdTaiKhoan),
+        CONSTRAINT UX_DanhSachCho_Lich_TaiKhoan UNIQUE (IdLich, IdTaiKhoan)
+    );
+END");
+
+            var inserted = _db.Database.ExecuteSqlInterpolated($@"
+IF NOT EXISTS (SELECT 1 FROM dbo.DanhSachCho WHERE IdLich = {idLich} AND IdTaiKhoan = {userId.Value})
+BEGIN
+    INSERT INTO dbo.DanhSachCho (IdLich, IdTaiKhoan, SoKhach)
+    VALUES ({idLich}, {userId.Value}, {Math.Max(1, soKhach)});
+END");
+
+            TempData[inserted > 0 ? "Success" : "Info"] = inserted > 0
+                ? "Đã thêm bạn vào danh sách chờ. HappyTrip sẽ ưu tiên liên hệ khi có chỗ trống."
+                : "Bạn đã có trong danh sách chờ của lịch này.";
+            return RedirectToAction("ChiTiet", "Tour", new { id = lich.IdTour });
+        }
+
         public IActionResult ThanhToan(int idDon)
         {
             int? userId = HttpContext.Session.GetInt32("IdTaiKhoan");
@@ -265,7 +347,7 @@ namespace TourWebApp.Controllers
             if (don.TrangThai == BookingPaymentStatus.TrangThaiChoThanhToan && DonDaHetHan(don))
             {
                 HuyDonQuaHan(don, "Don het han thanh toan");
-                _db.SaveChanges();
+                LuuVaDongBoCho(don);
 
                 TempData["Error"] = "Don da het han va bi huy tu dong!";
                 return RedirectToAction("DonCuaToi", "TaiKhoan");
@@ -324,7 +406,7 @@ namespace TourWebApp.Controllers
             if (don.TrangThai == "ChoThanhToan" && DonDaHetHan(don))
             {
                 HuyDonQuaHan(don, "Don het han truoc khi chuyen den VNPAY");
-                _db.SaveChanges();
+                LuuVaDongBoCho(don);
                 TempData["Error"] = "Don da het han, vui long dat lai.";
                 return RedirectToAction("DonCuaToi", "TaiKhoan");
             }
@@ -429,7 +511,7 @@ namespace TourWebApp.Controllers
             HuyDonQuaHan(don, $"{lyDo} (nguoi dung tu huy)");
             don.NgayHuy = DateTime.Now;
             _db.Entry(don).Property(x => x.NgayHuy).IsModified = true;
-            _db.SaveChanges();
+            LuuVaDongBoCho(don);
 
             TempData["Success"] = "Da huy don thanh cong.";
             return RedirectToAction("ChiTietDon", "TaiKhoan", new { idDon });
@@ -545,7 +627,7 @@ namespace TourWebApp.Controllers
                 if (don.TrangThai == "ChoThanhToan" && DonDaHetHan(don))
                 {
                     HuyDonQuaHan(don, "Don het han khi VNPAY callback");
-                    _db.SaveChanges();
+                    LuuVaDongBoCho(don);
                     TempData["Error"] = "Don da het han thanh toan.";
                     return RedirectToAction("DonCuaToi", "TaiKhoan");
                 }
@@ -639,7 +721,7 @@ namespace TourWebApp.Controllers
                 if (don.TrangThai == "ChoThanhToan" && DonDaHetHan(don))
                 {
                     HuyDonQuaHan(don, "Don het han khi VNPAY IPN");
-                    _db.SaveChanges();
+                    LuuVaDongBoCho(don);
                     return VnpayIpnResponse("00", "Confirm Success");
                 }
 
@@ -696,7 +778,7 @@ namespace TourWebApp.Controllers
             if (DonDaHetHan(don))
             {
                 HuyDonQuaHan(don, "Don het han khi xac nhan thanh toan");
-                _db.SaveChanges();
+                LuuVaDongBoCho(don);
                 TempData["Error"] = "Don da het han va bi huy tu dong!";
                 return RedirectToAction("DonCuaToi", "TaiKhoan");
             }
@@ -809,17 +891,13 @@ namespace TourWebApp.Controllers
         {
             don.TrangThai = BookingPaymentStatus.TrangThaiDaHuy;
             don.TrangThaiThanhToan = BookingPaymentStatus.TrangThaiTtHetHanThanhToan;
-
-            int soKhach = don.NguoiLon + don.TreEm + don.TreNho;
-            don.IdLichNavigation.SoChoConLai += soKhach;
-            don.IdTourNavigation.SoNguoiDaDat -= soKhach;
+            don.NgayHuy ??= DateTime.Now;
 
             HoanLaiPhieuGiamGiaNeuCan(don, ghiChu);
 
             _db.Entry(don).Property(x => x.TrangThai).IsModified = true;
             _db.Entry(don).Property(x => x.TrangThaiThanhToan).IsModified = true;
-            _db.Entry(don.IdLichNavigation).Property(x => x.SoChoConLai).IsModified = true;
-            _db.Entry(don.IdTourNavigation).Property(x => x.SoNguoiDaDat).IsModified = true;
+            _db.Entry(don).Property(x => x.NgayHuy).IsModified = true;
         }
 
         private void CapNhatDonThanhToanThanhCong(DonDatTour don, string phuongThuc, string? maGiaoDich)
@@ -839,10 +917,6 @@ namespace TourWebApp.Controllers
                 don.MaGiaoDich = maGiaoDich;
             }
 
-            int soKhach = don.NguoiLon + don.TreEm + don.TreNho;
-            don.IdLichNavigation.SoChoConLai -= soKhach;
-            don.IdTourNavigation.SoNguoiDaDat += soKhach;
-
             DanhDauPhieuDaSuDung(don);
 
             _db.Entry(don).Property(x => x.DaThanhToan).IsModified = true;
@@ -852,8 +926,12 @@ namespace TourWebApp.Controllers
             _db.Entry(don).Property(x => x.PhuongThucTT).IsModified = true;
             _db.Entry(don).Property(x => x.MaGiaoDich).IsModified = true;
 
-            _db.Entry(don.IdLichNavigation).Property(x => x.SoChoConLai).IsModified = true;
-            _db.Entry(don.IdTourNavigation).Property(x => x.SoNguoiDaDat).IsModified = true;
+        }
+
+        private void LuuVaDongBoCho(DonDatTour don)
+        {
+            _db.SaveChanges();
+            _seatInventory.SynchronizeAsync(don.IdLich, don.IdTour).GetAwaiter().GetResult();
         }
 
         private static void NormalizeGuestCounts(ref int adult, ref int child, ref int baby)

@@ -4,6 +4,7 @@
     ViewData["Title"] = Model.TenTour;
 
     var lichList = Model.LichKhoiHanhs
+        .Where(l => l.NgayKhoiHanh >= DateOnly.FromDateTime(DateTime.Today))
         .OrderBy(l => l.NgayKhoiHanh)
         .ThenBy(l => l.GioKhoiHanh)
         .ToList();
@@ -105,6 +106,9 @@
     </section>
 
     <div class="container tour-detail-container">
+        @if (TempData["Error"] != null) { <div class="alert alert-danger mt-3">@TempData["Error"]</div> }
+        @if (TempData["Success"] != null) { <div class="alert alert-success mt-3">@TempData["Success"]</div> }
+        @if (TempData["Info"] != null) { <div class="alert alert-info mt-3">@TempData["Info"]</div> }
         <section class="tour-detail-top-grid">
             <div class="tour-detail-gallery-card">
                 <div class="tour-detail-main-image-wrap">
@@ -272,7 +276,7 @@
                 }
                 else
                 {
-                    var lichGanNhat = lichList.First();
+                    var lichGanNhat = lichList.FirstOrDefault(x => x.SoChoConLai > 0) ?? lichList.First();
 
                     DateOnly? ngayKetThuc = null;
                     int soNgay = ExtractSoNgay(Model.ThoiGian ?? "");
@@ -293,20 +297,29 @@
                                     <span>Trạng thái</span>
                                 </div>
 
-                                <div class="tour-detail-schedule-list">
-                                    @foreach (var l in lichList.Select((value, index) => new { value, index }))
+                                <div class="tour-detail-schedule-list tour-departure-calendar">
+                                    @foreach (var thang in lichList.GroupBy(x => new { x.NgayKhoiHanh.Year, x.NgayKhoiHanh.Month }))
                                     {
-                                        var rowClass = l.index == 0 ? "lich-row lich-selected" : "lich-row";
-                                        <div class="@rowClass"
-                                             data-idlich="@l.value.IdLich"
-                                             data-ngay="@l.value.NgayKhoiHanh.ToString("dd/MM/yyyy")"
-                                             data-gio="@((l.value.GioKhoiHanh?.ToString("HH:mm") ?? "--"))"
-                                             data-socho="@l.value.SoChoConLai"
-                                             data-trangthai="@l.value.TrangThai">
-                                            <span>@l.value.NgayKhoiHanh.ToString("dd/MM/yyyy")</span>
-                                            <span>@(l.value.GioKhoiHanh?.ToString("HH:mm") ?? "--")</span>
-                                            <span>@l.value.SoChoConLai</span>
-                                            <span class="tour-detail-status">@l.value.TrangThai</span>
+                                        <h4 class="tour-calendar-month">Tháng @thang.Key.Month/@thang.Key.Year</h4>
+                                        <div class="tour-calendar-grid">
+                                            @foreach (var lichItem in thang)
+                                            {
+                                                var isSelected = lichItem.IdLich == lichGanNhat.IdLich;
+                                                var isFull = lichItem.SoChoConLai <= 0;
+                                                var status = isFull ? "Hết chỗ" : lichItem.SoChoConLai <= 5 ? "Sắp hết chỗ" : "Còn chỗ";
+                                                var rowClass = $"lich-row {(isSelected ? "lich-selected" : "")} {(isFull ? "lich-full" : "")}";
+                                                <button type="button" class="@rowClass"
+                                                     data-idlich="@lichItem.IdLich"
+                                                     data-ngay="@lichItem.NgayKhoiHanh.ToString("dd/MM/yyyy")"
+                                                     data-gio="@((lichItem.GioKhoiHanh?.ToString("HH:mm") ?? "--"))"
+                                                     data-socho="@lichItem.SoChoConLai"
+                                                     data-trangthai="@status">
+                                                    <span class="tour-calendar-day">@lichItem.NgayKhoiHanh.Day</span>
+                                                    <span>@lichItem.NgayKhoiHanh.ToString("ddd", new System.Globalization.CultureInfo("vi-VN"))</span>
+                                                    <span>@(lichItem.GioKhoiHanh?.ToString("HH:mm") ?? "--")</span>
+                                                    <span class="tour-detail-status">@status · @lichItem.SoChoConLai chỗ</span>
+                                                </button>
+                                            }
                                         </div>
                                     }
                                 </div>
@@ -378,9 +391,19 @@
                                     <p><span>Tổng tiền</span><strong id="totalAmount" class="tour-detail-total-amount"></strong></p>
                                 </div>
 
-                                <button type="button" class="btn tour-detail-btn-primary w-100 mt-3" onclick="goToBooking()">
+                                <div id="seatWarning" class="alert alert-warning mt-3 mb-0 d-none"></div>
+
+                                <button id="bookingButton" type="button" class="btn tour-detail-btn-primary w-100 mt-3" onclick="goToBooking()">
                                     Đặt tour
                                 </button>
+                                <form id="waitlistForm" asp-controller="DatTour" asp-action="ThamGiaDanhSachCho" method="post" class="d-none mt-3">
+                                    @Html.AntiForgeryToken()
+                                    <input id="waitlistScheduleId" type="hidden" name="idLich" value="@lichGanNhat.IdLich" />
+                                    <input id="waitlistGuestCount" type="hidden" name="soKhach" value="1" />
+                                    <button type="submit" class="btn btn-outline-warning w-100">
+                                        <i class="fa-solid fa-list"></i> Tham gia danh sách chờ
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>

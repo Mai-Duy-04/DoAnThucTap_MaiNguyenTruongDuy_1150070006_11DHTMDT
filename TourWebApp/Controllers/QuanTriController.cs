@@ -12,6 +12,7 @@ using iText.Kernel.Colors;
 using iText.IO.Image;
 using iText.Kernel.Font;
 using iText.IO.Font;
+using System.Data;
 
 namespace TourWebApp.Controllers
 {
@@ -678,8 +679,90 @@ namespace TourWebApp.Controllers
 
             ViewBag.Tours = _context.Tours.ToList();
             ViewBag.IdTour = idTour;
+            ViewBag.WaitlistCounts = LaySoLuongDanhSachCho();
 
             return View(query.OrderByDescending(l => l.NgayKhoiHanh).ToList());
+        }
+
+        public IActionResult DanhSachCho(int? idLich)
+        {
+            if (!LaAdmin()) return NeuKhongPhaiAdmin();
+
+            var result = new List<DanhSachChoAdminVM>();
+            var connection = _context.Database.GetDbConnection();
+            if (connection.State != ConnectionState.Open) connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+IF OBJECT_ID(N'dbo.DanhSachCho', N'U') IS NOT NULL
+BEGIN
+    SELECT ds.IdDanhSachCho, ds.IdLich, t.TenTour, l.NgayKhoiHanh,
+           tk.HoTen, tk.Email, tk.SoDienThoai, ds.SoKhach, ds.NgayDangKy, ds.TrangThai
+    FROM dbo.DanhSachCho ds
+    INNER JOIN dbo.LichKhoiHanh l ON l.IdLich = ds.IdLich
+    INNER JOIN dbo.Tour t ON t.IdTour = l.IdTour
+    INNER JOIN dbo.TaiKhoan tk ON tk.IdTaiKhoan = ds.IdTaiKhoan
+    WHERE (@IdLich IS NULL OR ds.IdLich = @IdLich)
+    ORDER BY CASE WHEN ds.TrangThai = N'Đang chờ' THEN 0 ELSE 1 END, ds.NgayDangKy;
+END";
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = "@IdLich";
+            parameter.Value = idLich.HasValue ? idLich.Value : DBNull.Value;
+            command.Parameters.Add(parameter);
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                result.Add(new DanhSachChoAdminVM
+                {
+                    IdDanhSachCho = reader.GetInt32(0),
+                    IdLich = reader.GetInt32(1),
+                    TenTour = reader.GetString(2),
+                    NgayKhoiHanh = DateOnly.FromDateTime(reader.GetDateTime(3)),
+                    HoTen = reader.GetString(4),
+                    Email = reader.GetString(5),
+                    SoDienThoai = reader.IsDBNull(6) ? null : reader.GetString(6),
+                    SoKhach = reader.GetInt32(7),
+                    NgayDangKy = reader.GetDateTime(8),
+                    TrangThai = reader.GetString(9)
+                });
+            }
+
+            ViewBag.IdLich = idLich;
+            return View(result);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CapNhatDanhSachCho(int id, string trangThai)
+        {
+            if (!LaAdmin()) return NeuKhongPhaiAdmin();
+
+            var allowed = new[] { "Đang chờ", "Đã thông báo", "Đã liên hệ", "Đã đặt", "Đã hủy" };
+            if (!allowed.Contains(trangThai)) return BadRequest();
+
+            _context.Database.ExecuteSqlInterpolated($@"
+IF OBJECT_ID(N'dbo.DanhSachCho', N'U') IS NOT NULL
+    UPDATE dbo.DanhSachCho SET TrangThai = {trangThai} WHERE IdDanhSachCho = {id};");
+
+            TempData["ThongBao"] = "Đã cập nhật trạng thái danh sách chờ.";
+            return RedirectToAction(nameof(DanhSachCho));
+        }
+
+        private Dictionary<int, int> LaySoLuongDanhSachCho()
+        {
+            var result = new Dictionary<int, int>();
+            var connection = _context.Database.GetDbConnection();
+            if (connection.State != ConnectionState.Open) connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+IF OBJECT_ID(N'dbo.DanhSachCho', N'U') IS NOT NULL
+    SELECT IdLich, COUNT(*) FROM dbo.DanhSachCho
+    WHERE TrangThai IN (N'Đang chờ', N'Đã thông báo', N'Đã liên hệ') GROUP BY IdLich;";
+            using var reader = command.ExecuteReader();
+            while (reader.Read()) result[reader.GetInt32(0)] = reader.GetInt32(1);
+            return result;
         }
 
         [HttpGet]

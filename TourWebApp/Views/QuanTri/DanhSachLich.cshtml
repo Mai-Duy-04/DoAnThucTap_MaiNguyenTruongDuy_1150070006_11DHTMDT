@@ -2,7 +2,11 @@
 @{
     ViewData["Title"] = "Quản lý lịch khởi hành";
    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
-
+   var waitlistCounts = ViewBag.WaitlistCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+   var tongSucChua = Model.Sum(x => x.SoChoToiDa);
+   var tongConLai = Model.Sum(x => x.SoChoConLai);
+   var tongDangGiu = Math.Max(0, tongSucChua - tongConLai);
+   var sapHetHoacFull = Model.Count(x => x.SoChoConLai <= 5);
 }
 
 
@@ -65,6 +69,13 @@
     </form>
 </div>
 
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card p-3 border-0 shadow-sm"><small class="text-muted">Tổng lịch</small><strong class="fs-4">@Model.Count</strong></div></div>
+    <div class="col-md-3"><div class="card p-3 border-0 shadow-sm"><small class="text-muted">Tổng sức chứa</small><strong class="fs-4">@tongSucChua</strong></div></div>
+    <div class="col-md-3"><div class="card p-3 border-0 shadow-sm"><small class="text-muted">Chỗ đang giữ/đã đặt</small><strong class="fs-4 text-primary">@tongDangGiu</strong></div></div>
+    <div class="col-md-3"><div class="card p-3 border-0 shadow-sm"><small class="text-muted">Sắp hết hoặc full</small><strong class="fs-4 text-danger">@sapHetHoacFull</strong></div></div>
+</div>
+
 <!-- ================= BẢNG DANH SÁCH ================= -->
 <table class="table table-bordered align-middle">
     <thead class="table-light">
@@ -73,8 +84,10 @@
             <th>Ngày</th>
             <th>Giờ</th>
             <th>Chỗ tối đa</th>
+            <th>Đang giữ/đã đặt</th>
             <th>Chỗ còn</th>
             <th>Trạng thái</th>
+            <th>Chờ chỗ</th>
             <th width="120">Hành động</th>
         </tr>
     </thead>
@@ -82,7 +95,10 @@
     <tbody>
 @foreach (var item in Model)
 {
-    var phanTram = (double)item.SoChoConLai / item.SoChoToiDa * 100;
+    var phanTram = item.SoChoToiDa > 0 ? (double)item.SoChoConLai / item.SoChoToiDa * 100 : 0;
+    var soDaGiu = Math.Max(0, item.SoChoToiDa - item.SoChoConLai);
+    var trangThaiCho = item.SoChoConLai <= 0 ? "Hết chỗ" : item.SoChoConLai <= 5 ? "Sắp hết chỗ" : "Còn chỗ";
+    var waitCount = waitlistCounts.TryGetValue(item.IdLich, out var count) ? count : 0;
 
     string mau = phanTram == 0 ? "bg-danger" :
                  phanTram <= 50 ? "bg-warning text-dark" :
@@ -93,6 +109,7 @@
         <td>@item.NgayKhoiHanh</td>
         <td>@item.GioKhoiHanh</td>
         <td>@item.SoChoToiDa</td>
+        <td><span class="badge bg-primary">@soDaGiu</span></td>
 
         <!-- CHỖ CÒN + MÀU THEO % -->
         <td>
@@ -102,7 +119,18 @@
         </td>
 
         <td>
-            @(item.SoChoConLai > 0 ? "Còn chỗ" : "Hết chỗ")
+            <span class="badge @(item.SoChoConLai <= 0 ? "bg-danger" : item.SoChoConLai <= 5 ? "bg-warning text-dark" : "bg-success")">@trangThaiCho</span>
+        </td>
+
+        <td>
+            @if (waitCount > 0)
+            {
+                <a asp-action="DanhSachCho" asp-route-idLich="@item.IdLich" class="badge bg-info text-dark text-decoration-none">@waitCount khách</a>
+            }
+            else
+            {
+                <span class="text-muted">0</span>
+            }
         </td>
 
         <td class="text-center">

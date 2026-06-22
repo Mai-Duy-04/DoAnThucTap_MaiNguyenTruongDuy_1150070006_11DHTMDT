@@ -40,7 +40,7 @@
                 ngay = lich.NgayKhoiHanh.ToString("dd/MM/yyyy");
                 gio = lich.GioKhoiHanh?.ToString("HH:mm") ?? "--";
                 socho = lich.SoChoConLai.ToString();
-                trangThai = lich.SoChoConLai <= 0 ? "Hết chỗ" : "Còn chỗ";
+                trangThai = lich.SoChoConLai <= 0 ? "Hết chỗ" : lich.SoChoConLai <= 5 ? "Sắp hết chỗ" : "Còn chỗ";
             }
 
             <div class="col-md-4 d-flex reveal" style="--stagger:@(tourIndex % 8)">

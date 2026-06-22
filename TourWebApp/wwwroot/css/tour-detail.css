@@ -1200,3 +1200,48 @@
         width: 100%;
     }
 }
+/* Departure calendar and live capacity states */
+.tour-departure-calendar .tour-calendar-month {
+    margin: 1rem 0 .65rem;
+    color: #173b57;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.tour-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: .7rem;
+}
+
+.tour-calendar-grid .lich-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .2rem;
+    min-height: 118px;
+    padding: .75rem;
+    border: 1px solid #d8e2e9;
+    border-radius: 14px;
+    background: #fff;
+    color: #173b57;
+    text-align: left;
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.tour-calendar-grid .lich-row:hover,
+.tour-calendar-grid .lich-row.lich-selected {
+    border-color: #ed7d31;
+    box-shadow: 0 8px 20px rgba(237, 125, 49, .14);
+    transform: translateY(-2px);
+}
+
+.tour-calendar-day { font-size: 1.65rem; font-weight: 900; line-height: 1; }
+.tour-calendar-grid .tour-detail-status { color: #27814c; font-size: .78rem; font-weight: 800; }
+.tour-calendar-grid .lich-row[data-trangthai="Sắp hết chỗ"] .tour-detail-status { color: #b86500; }
+.tour-calendar-grid .lich-row.lich-full { background: #f5f5f5; color: #777; }
+.tour-calendar-grid .lich-row.lich-full .tour-detail-status { color: #b02a37; }
+
+@media (max-width: 576px) {
+    .tour-calendar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

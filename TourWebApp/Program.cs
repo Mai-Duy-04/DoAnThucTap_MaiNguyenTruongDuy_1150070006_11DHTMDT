@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ISeatInventoryService, SeatInventoryService>();
 
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")

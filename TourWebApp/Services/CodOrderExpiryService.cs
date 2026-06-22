@@ -17,11 +17,22 @@ public class CodOrderExpiryService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        try
+        {
+            using var initialScope = _scopeFactory.CreateScope();
+            var inventory = initialScope.ServiceProvider.GetRequiredService<ISeatInventoryService>();
+            await inventory.SynchronizeAllAsync(stoppingToken);
+        }
+        catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
+        {
+            _logger.LogError(ex, "Initial seat inventory synchronization failed.");
+        }
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                await XuLyDonCodQuaHan(stoppingToken);
+                await XuLyDonQuaHan(stoppingToken);
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -30,15 +41,16 @@ public class CodOrderExpiryService : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "COD expiry job failed.");
+                _logger.LogError(ex, "Booking expiry job failed.");
             }
         }
     }
 
-    private async Task XuLyDonCodQuaHan(CancellationToken stoppingToken)
+    private async Task XuLyDonQuaHan(CancellationToken stoppingToken)
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var seatInventory = scope.ServiceProvider.GetRequiredService<ISeatInventoryService>();
         var now = DateTime.Now;
 
         var donQuaHan = await db.DonDatTours
@@ -46,9 +58,7 @@ public class CodOrderExpiryService : BackgroundService
             .Include(x => x.IdTourNavigation)
             .Include(x => x.PhieuGiamGiaSuDungs)
             .Where(x => !x.DaThanhToan
-                && x.PhuongThucTT == BookingPaymentStatus.PhuongThucTienMat
-                && x.TrangThai == BookingPaymentStatus.TrangThaiChoXacNhanTienMat
-                && x.TrangThaiThanhToan == BookingPaymentStatus.TrangThaiTtChoThuTienMat
+                && x.TrangThai != BookingPaymentStatus.TrangThaiDaHuy
                 && x.HanThanhToan.HasValue
                 && x.HanThanhToan.Value < now)
             .ToListAsync(stoppingToken);
@@ -69,7 +79,16 @@ public class CodOrderExpiryService : BackgroundService
             }
         }
 
+        var affectedSchedules = donQuaHan
+            .Select(x => new { x.IdLich, x.IdTour })
+            .Distinct()
+            .ToList();
+
         await db.SaveChangesAsync(stoppingToken);
-        _logger.LogInformation("COD expiry job canceled {Count} orders.", donQuaHan.Count);
+        foreach (var item in affectedSchedules)
+        {
+            await seatInventory.SynchronizeAsync(item.IdLich, item.IdTour, stoppingToken);
+        }
+        _logger.LogInformation("Booking expiry job canceled {Count} expired orders.", donQuaHan.Count);
     }
 }
