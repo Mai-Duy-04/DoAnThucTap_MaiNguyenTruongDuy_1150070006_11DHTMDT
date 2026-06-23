@@ -41,6 +41,7 @@ public sealed class SeatInventoryService : ISeatInventoryService
     public async Task SynchronizeAsync(int scheduleId, int tourId, CancellationToken cancellationToken = default)
     {
         var schedule = await _db.LichKhoiHanhs.SingleAsync(x => x.IdLich == scheduleId, cancellationToken);
+        var previousRemainingSeats = schedule.SoChoConLai;
         var reservedForSchedule = await ActiveBookings(scheduleId)
             .SumAsync(x => x.NguoiLon + x.TreEm + x.TreNho, cancellationToken);
 
@@ -59,7 +60,7 @@ public sealed class SeatInventoryService : ISeatInventoryService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        if (schedule.SoChoConLai > 0)
+        if (previousRemainingSeats <= 0 && schedule.SoChoConLai > 0)
         {
             var tourLink = $"/Tour/ChiTiet/{tourId}";
             await _db.Database.ExecuteSqlInterpolatedAsync($@"
@@ -85,15 +86,49 @@ END", cancellationToken);
 
     public async Task SynchronizeAllAsync(CancellationToken cancellationToken = default)
     {
+        var reservedBySchedule = await _db.DonDatTours
+            .Where(x => x.TrangThai != BookingPaymentStatus.TrangThaiDaHuy)
+            .GroupBy(x => x.IdLich)
+            .Select(x => new
+            {
+                IdLich = x.Key,
+                Reserved = x.Sum(d => d.NguoiLon + d.TreEm + d.TreNho)
+            })
+            .ToDictionaryAsync(x => x.IdLich, x => x.Reserved, cancellationToken);
+
+        var reservedByTour = await _db.DonDatTours
+            .Where(x => x.TrangThai != BookingPaymentStatus.TrangThaiDaHuy)
+            .GroupBy(x => x.IdTour)
+            .Select(x => new
+            {
+                IdTour = x.Key,
+                Reserved = x.Sum(d => d.NguoiLon + d.TreEm + d.TreNho)
+            })
+            .ToDictionaryAsync(x => x.IdTour, x => x.Reserved, cancellationToken);
+
         var schedules = await _db.LichKhoiHanhs
-            .AsNoTracking()
-            .Select(x => new { x.IdLich, x.IdTour })
             .ToListAsync(cancellationToken);
 
-        foreach (var item in schedules)
+        foreach (var schedule in schedules)
         {
-            await SynchronizeAsync(item.IdLich, item.IdTour, cancellationToken);
+            reservedBySchedule.TryGetValue(schedule.IdLich, out var reserved);
+            schedule.SoChoConLai = Math.Max(0, schedule.SoChoToiDa - reserved);
+            schedule.TrangThai = schedule.SoChoConLai switch
+            {
+                <= 0 => "Hết chỗ",
+                <= 5 => "Sắp hết chỗ",
+                _ => "Còn chỗ"
+            };
         }
+
+        var tours = await _db.Tours.ToListAsync(cancellationToken);
+        foreach (var tour in tours)
+        {
+            reservedByTour.TryGetValue(tour.IdTour, out var reserved);
+            tour.SoNguoiDaDat = reserved;
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
     }
 
     private IQueryable<DonDatTour> ActiveBookings(int scheduleId)
