@@ -3,11 +3,17 @@
     Layout = "_LayoutAdmin";
 
     var period = ViewBag.Period as string ?? "month";
+    var selectedDate = ViewBag.SelectedDate as string ?? DateTime.Now.ToString("yyyy-MM-dd");
+    var selectedDateText = ViewBag.SelectedDateText as string ?? DateTime.Now.ToString("dd/MM/yyyy");
+    var filterTitle = ViewBag.FilterTitle as string ?? "Tháng hiện tại";
     var topTours = ViewBag.TopTour as IEnumerable<Tour> ?? Enumerable.Empty<Tour>();
 
     string Active(string value) => period == value ? "active" : "";
+    string TrendClass(decimal value) => value >= 0 ? "up" : "down";
+    string TrendIcon(decimal value) => value >= 0 ? "fa-arrow-trend-up" : "fa-arrow-trend-down";
 }
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="~/css/dashboard-admin.css" asp-append-version="true" />
 
 <div class="dash-page">
@@ -16,59 +22,135 @@
         <div>
             <span class="dash-eyebrow">HappyTrip Analytics</span>
             <h3>Tổng quan hệ thống</h3>
-            <p>Theo dõi doanh thu, số lượng khách đặt và tour nổi bật.</p>
+            <p>Theo dõi doanh thu, số lượng khách đặt và các tour nổi bật của hệ thống.</p>
         </div>
 
-        <div class="dash-filter">
-            <a class="@Active("day")" href="/QuanTri/Dashboard?period=day">Ngày</a>
-            <a class="@Active("week")" href="/QuanTri/Dashboard?period=week">Tuần</a>
-            <a class="@Active("month")" href="/QuanTri/Dashboard?period=month">Tháng</a>
-            <a class="@Active("quarter")" href="/QuanTri/Dashboard?period=quarter">Quý</a>
-            <a class="@Active("year")" href="/QuanTri/Dashboard?period=year">Năm</a>
+        <div class="dash-header-actions">
+            <div class="dash-date-picker-wrapper">
+                <i class="fa-solid fa-calendar-days"></i>
+                <input id="singleDatePicker"
+                       class="dash-date-input"
+                       type="text"
+                       value="@selectedDateText"
+                       data-date="@selectedDate"
+                       readonly />
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+
+            <div class="dash-filter">
+                <a class="@Active("day")" href="/QuanTri/Dashboard?period=day&selectedDate=@selectedDate">Ngày</a>
+                <a class="@Active("week")" href="/QuanTri/Dashboard?period=week">Tuần</a>
+                <a class="@Active("month")" href="/QuanTri/Dashboard?period=month">Tháng</a>
+                <a class="@Active("quarter")" href="/QuanTri/Dashboard?period=quarter">Quý</a>
+                <a class="@Active("year")" href="/QuanTri/Dashboard?period=year">Năm</a>
+            </div>
         </div>
     </div>
 
     <div class="dash-kpi-grid">
-        <div class="dash-kpi-card">
-            <div>
-                <span>Doanh thu</span>
-                <h2>@string.Format("{0:N0} đ", ViewBag.TongDoanhThu ?? 0)</h2>
+
+        <div class="dash-kpi-card doanhtu">
+            <div class="kpi-top">
+                <div>
+                    <span class="kpi-label">Doanh thu</span>
+                    <h2 class="kpi-value">@string.Format("{0:N0} đ", ViewBag.TongDoanhThu ?? 0)</h2>
+                </div>
+                <div class="kpi-icon">
+                    <i class="fa-solid fa-sack-dollar"></i>
+                </div>
             </div>
-            <i class="fa-solid fa-sack-dollar"></i>
+
+            <div class="kpi-bottom">
+                <div class="kpi-trend @TrendClass((decimal)(ViewBag.PhanTramDoanhThu ?? 0m))">
+                    <i class="fa-solid @TrendIcon((decimal)(ViewBag.PhanTramDoanhThu ?? 0m))"></i>
+                    <strong>@string.Format("{0:+0.0;-0.0;0.0}%", ViewBag.PhanTramDoanhThu ?? 0)</strong>
+                    <span>so với kì trước</span>
+                </div>
+                <svg class="kpi-wave" viewBox="0 0 80 30" preserveAspectRatio="none">
+                    <path d="M2 20 C15 5, 25 30, 38 15 S62 4, 78 18" />
+                </svg>
+            </div>
         </div>
 
-        <div class="dash-kpi-card">
-            <div>
-                <span>Đơn đặt tour</span>
-                <h2 class="counter" data-count="@ViewBag.TongDon">0</h2>
+        <div class="dash-kpi-card dondon">
+            <div class="kpi-top">
+                <div>
+                    <span class="kpi-label">Đơn đặt tour</span>
+                    <h2 class="kpi-value counter" data-count="@ViewBag.TongDon">0</h2>
+                </div>
+                <div class="kpi-icon">
+                    <i class="fa-solid fa-receipt"></i>
+                </div>
             </div>
-            <i class="fa-solid fa-receipt"></i>
+
+            <div class="kpi-bottom">
+                <div class="kpi-trend @TrendClass((decimal)(ViewBag.PhanTramDon ?? 0m))">
+                    <i class="fa-solid @TrendIcon((decimal)(ViewBag.PhanTramDon ?? 0m))"></i>
+                    <strong>@string.Format("{0:+0.0;-0.0;0.0}%", ViewBag.PhanTramDon ?? 0)</strong>
+                    <span>so với kì trước</span>
+                </div>
+                <svg class="kpi-wave" viewBox="0 0 80 30" preserveAspectRatio="none">
+                    <path d="M2 22 C18 10, 28 24, 40 16 S64 26, 78 5" />
+                </svg>
+            </div>
         </div>
 
-        <div class="dash-kpi-card">
-            <div>
-                <span>Khách đã đặt</span>
-                <h2 class="counter" data-count="@ViewBag.TongKhach">0</h2>
+        <div class="dash-kpi-card khachdat">
+            <div class="kpi-top">
+                <div>
+                    <span class="kpi-label">Khách đã đặt</span>
+                    <h2 class="kpi-value counter" data-count="@ViewBag.TongKhach">0</h2>
+                </div>
+                <div class="kpi-icon">
+                    <i class="fa-solid fa-user-group"></i>
+                </div>
             </div>
-            <i class="fa-solid fa-user-group"></i>
+
+            <div class="kpi-bottom">
+                <div class="kpi-trend @TrendClass((decimal)(ViewBag.PhanTramKhach ?? 0m))">
+                    <i class="fa-solid @TrendIcon((decimal)(ViewBag.PhanTramKhach ?? 0m))"></i>
+                    <strong>@string.Format("{0:+0.0;-0.0;0.0}%", ViewBag.PhanTramKhach ?? 0)</strong>
+                    <span>so với kì trước</span>
+                </div>
+                <svg class="kpi-wave" viewBox="0 0 80 30" preserveAspectRatio="none">
+                    <path d="M2 18 C16 24, 25 8, 40 15 S60 28, 78 18" />
+                </svg>
+            </div>
         </div>
 
-        <div class="dash-kpi-card">
-            <div>
-                <span>Tour đang bán</span>
-                <h2 class="counter" data-count="@ViewBag.TourDangBan">0</h2>
+        <div class="dash-kpi-card tourban">
+            <div class="kpi-top">
+                <div>
+                    <span class="kpi-label">Tour đang bán</span>
+                    <h2 class="kpi-value counter" data-count="@ViewBag.TourDangBan">0</h2>
+                </div>
+                <div class="kpi-icon">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                </div>
             </div>
-            <i class="fa-solid fa-map-location-dot"></i>
+
+            <div class="kpi-bottom">
+                <div class="kpi-trend @TrendClass((decimal)(ViewBag.PhanTramTour ?? 0m))">
+                    <i class="fa-solid @TrendIcon((decimal)(ViewBag.PhanTramTour ?? 0m))"></i>
+                    <strong>@string.Format("{0:+0.0;-0.0;0.0}%", ViewBag.PhanTramTour ?? 0)</strong>
+                    <span>so với kì trước</span>
+                </div>
+                <svg class="kpi-wave" viewBox="0 0 80 30" preserveAspectRatio="none">
+                    <path d="M2 20 C17 12, 26 12, 38 18 S60 22, 78 10" />
+                </svg>
+            </div>
         </div>
+
     </div>
 
     <div class="dash-chart-grid">
-        <div class="dash-panel">
+        <div class="dash-panel panel-revenue">
             <div class="panel-head">
                 <div>
                     <h5>Doanh thu theo thời gian</h5>
-                    <p>Thống kê doanh thu theo bộ lọc đang chọn.</p>
+                    <p>Thống kê doanh thu bán tour theo bộ lọc đang chọn.</p>
                 </div>
+                <span class="panel-pill">@filterTitle</span>
             </div>
 
             <div class="chart-box chart-big">
@@ -76,12 +158,13 @@
             </div>
         </div>
 
-        <div class="dash-panel">
+        <div class="dash-panel panel-customer">
             <div class="panel-head">
                 <div>
                     <h5>Khách đặt theo thời gian</h5>
-                    <p>Số lượng khách đặt tour theo thời gian.</p>
+                    <p>Số lượng hành khách đăng ký đặt tour.</p>
                 </div>
+                <span class="panel-pill">Tất cả</span>
             </div>
 
             <div class="chart-box">
@@ -90,77 +173,130 @@
         </div>
     </div>
 
-    <div class="dash-panel">
+    <div class="dash-panel top-tour-panel">
         <div class="panel-head">
             <div>
-                <h5>Top 3 tour nổi bật</h5>
-                <p>Tour có số người đặt cao nhất.</p>
+                <h5>Top 3 tour nổi bật nhất</h5>
+                <p>Những tour du lịch thu hút số lượng khách đặt và lượt xem cao nhất.</p>
             </div>
+
+            <a href="/QuanTri/QuanLyTour" class="btn-view-all">
+                Xem tất cả
+                <i class="fa-solid fa-arrow-right"></i>
+            </a>
         </div>
 
-        <div class="top-tour-list">
-          @foreach (var t in topTours)
-                {
-                    var firstImage = t.HinhTours
-                        .Where(h => !string.IsNullOrWhiteSpace(h.UrlHinh))
-                        .OrderBy(h => h.ThuTu ?? 999)
-                        .FirstOrDefault();
+        <div class="table-responsive">
+            <table class="dash-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Tour du lịch</th>
+                        <th>Địa điểm</th>
+                        <th>Số khách đặt</th>
+                        <th>Lượt xem</th>
+                        <th>Doanh thu</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
 
-                    var img = "/images/default-tour.jpg";
-
-                    if (firstImage != null)
-                    {
-                        img = firstImage.UrlHinh.Trim();
-
-                        if (img.StartsWith("~/"))
-                        {
-                            img = img.Replace("~", "");
-                        }
-                        else if (!img.StartsWith("/") && !img.StartsWith("http"))
-                        {
-                            img = "/img/tours/hinhtour/" + img;
-                        }
+                <tbody>
+                    @{
+                        var index = 1;
                     }
 
-                    <div class="top-tour-item">
+                    @foreach (var t in topTours)
+                    {
+                        var firstImage = t.HinhTours
+                            .Where(h => !string.IsNullOrWhiteSpace(h.UrlHinh))
+                            .OrderBy(h => h.ThuTu ?? 999)
+                            .FirstOrDefault();
 
-                        <img src="@img"
-                            alt=""
-                            onerror="this.style.border='3px solid red';" />
+                        var img = "/images/default-tour.jpg";
 
-                        <div class="tour-info">
+                        if (firstImage != null)
+                        {
+                            img = firstImage.UrlHinh.Trim();
 
-                            <strong>@t.TenTour</strong>
+                            if (img.StartsWith("~/"))
+                            {
+                                img = img.Replace("~", "");
+                            }
+                            else if (!img.StartsWith("/") && !img.StartsWith("http"))
+                            {
+                                img = "/img/tours/hinhtour/" + img;
+                            }
+                        }
 
-                            <span>
-                                <i class="fa-solid fa-location-dot"></i>
-                                @t.DiaDiem
-                            </span>
+                        var doanhThuUocTinh = (t.GiaKhuyenMai ?? t.GiaGoc ?? 0) * t.SoNguoiDaDat;
 
-                            <small>
-                                <i class="fa-solid fa-user-group"></i>
-                                @t.SoNguoiDaDat người đặt
+                        <tr>
+                            <td><span class="rank-number">#@index</span></td>
 
-                                &nbsp;&nbsp;
+                            <td>
+                                <div class="tour-cell">
+                                    <img src="@img"
+                                         alt=""
+                                         onerror="this.onerror=null; this.src='/images/default-tour.jpg';" />
 
-                                <i class="fa-solid fa-eye"></i>
-                                @t.LuotXem lượt xem
-                            </small>               
-                        </div>
-                    </div>
-                }
+                                    <div class="tour-cell-info">
+                                        <span class="tour-title">@t.TenTour</span>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="tour-loc">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                    @t.DiaDiem
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="booking-count">@string.Format("{0:N0}", t.SoNguoiDaDat)</span>
+                                <span class="muted-small">người</span>
+                            </td>
+
+                            <td>
+                                <span class="booking-views">
+                                    <i class="fa-solid fa-eye"></i>
+                                    @string.Format("{0:N0}", t.LuotXem)
+                                </span>
+                            </td>
+
+                            <td>
+                                <strong>@string.Format("{0:N0} đ", doanhThuUocTinh)</strong>
+                            </td>
+
+                            <td>
+                                @if (t.TrangThai)
+                                {
+                                    <span class="status-badge active">Đang bán</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge inactive">Ngưng bán</span>
+                                }
+                            </td>
+                        </tr>
+
+                        index++;
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 
 </div>
 
 <script>
+    window.selectedDate = "@selectedDate";
     window.labelDoanhThu = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.LabelDoanhThu ?? new List<string>()));
     window.dataDoanhThu = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.DataDoanhThu ?? new List<decimal>()));
-
     window.labelKhach = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.LabelKhach ?? new List<string>()));
     window.dataKhach = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.DataKhach ?? new List<int>()));
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="~/js/dashboard-admin.js" asp-append-version="true"></script>
