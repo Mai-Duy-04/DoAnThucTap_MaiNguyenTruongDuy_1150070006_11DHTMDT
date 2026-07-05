@@ -1,17 +1,21 @@
 @model TourWebApp.Data.Models.Tour
+
 @{
     Layout = "_LayoutAdmin";
-   var loaiTours = ViewBag.LoaiTours as List<TourWebApp.Data.Models.LoaiTour> ?? new List<TourWebApp.Data.Models.LoaiTour>();
+    var loaiTours = ViewBag.LoaiTours as List<TourWebApp.Data.Models.LoaiTour> ?? new List<TourWebApp.Data.Models.LoaiTour>();
 }
+
+<link rel="stylesheet" href="~/css/upload-tour.css" />
 
 <div class="container-fluid">
     <h4 class="mb-3 fw-bold">✏️ Sửa thông tin tour</h4>
 
-   <form asp-action="SuaTour" method="post" enctype="multipart/form-data">
-   <input type="hidden" asp-for="IdTour" />
+    <form asp-action="SuaTour" method="post" enctype="multipart/form-data">
+        <input type="hidden" asp-for="IdTour" />
 
         <div class="card shadow-sm p-4">
             <div class="row g-3">
+
                 <div class="col-md-6">
                     <label class="form-label">Mã tour</label>
                     <input asp-for="MaTour" class="form-control bg-light" readonly />
@@ -28,8 +32,7 @@
                         <option value="">-- Chọn loại tour --</option>
                         @foreach (var item in loaiTours)
                         {
-                            <option value="@item.IdLoaiTour"
-                                    selected="@(item.IdLoaiTour == Model.IdLoaiTour)">
+                            <option value="@item.IdLoaiTour" selected="@(item.IdLoaiTour == Model.IdLoaiTour)">
                                 @item.TenLoai
                             </option>
                         }
@@ -43,7 +46,7 @@
 
                 <div class="col-md-6">
                     <label class="form-label">Thời gian</label>
-                    <input asp-for="ThoiGian" class="form-control" placeholder="VD: 3N2Đ"/>
+                    <input asp-for="ThoiGian" class="form-control" placeholder="VD: 3N2Đ" />
                 </div>
 
                 <div class="col-md-6">
@@ -58,8 +61,7 @@
                     </select>
                 </div>
 
-
-               <div class="col-md-4">
+                <div class="col-md-4">
                     <label class="form-label fw-semibold">Giá gốc</label>
                     <input asp-for="GiaGoc" class="form-control price-input" id="giaGoc" />
                 </div>
@@ -83,58 +85,41 @@
                     <h5 class="fw-bold text-primary mb-2">💲 Giá chi tiết theo đối tượng</h5>
 
                     <div class="row g-3">
-
-                        <!-- GIÁ NGƯỜI LỚN -->
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Giá người lớn</label>
-                            <input type="number" name="GiaNguoiLon"
-                                class="form-control"
-                                value="@ViewBag.GiaNguoiLon"
-                                min="0" required />
+                            <input type="number" name="GiaNguoiLon" class="form-control" value="@ViewBag.GiaNguoiLon" min="0" required />
                         </div>
 
-                        <!-- GIÁ TRẺ EM -->
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Giá trẻ em</label>
-                            <input type="number" name="GiaTreEm"
-                                class="form-control"
-                                value="@ViewBag.GiaTreEm"
-                                min="0" required />
+                            <input type="number" name="GiaTreEm" class="form-control" value="@ViewBag.GiaTreEm" min="0" required />
                         </div>
 
-                        <!-- GIÁ EM BÉ -->
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Giá em bé</label>
-                            <input type="number" name="GiaEmBe"
-                                class="form-control"
-                                value="@ViewBag.GiaEmBe"
-                                min="0" required />
+                            <input type="number" name="GiaEmBe" class="form-control" value="@ViewBag.GiaEmBe" min="0" required />
                         </div>
-
                     </div>
                 </div>
-
 
                 <div class="col-12 mt-3">
                     <label class="form-label fw-semibold">Hình ảnh tour</label>
 
-                    <!-- Upload ảnh mới -->
                     <div id="drop-zone" class="drop-zone mb-3">
-                        <p class="text-muted">📷 Kéo thả hoặc click để chọn nhiều ảnh</p>
+                        <p class="text-muted mb-0">📷 Kéo thả hoặc click để chọn nhiều ảnh</p>
                         <input type="file" name="HinhAnhFiles" id="fileInput" multiple accept="image/*" hidden />
                     </div>
 
-                    <!-- Ảnh cũ -->
                     <h6 class="fw-bold mb-2">Ảnh hiện tại</h6>
-
                     <div class="preview-grid">
                         @foreach (var h in Model.HinhTours)
                         {
                             <div class="preview-item">
-                                <img src="~/img/tours/@h.UrlHinh" />
+                                <div class="preview-image">
+                                    <img src="~/img/tours/@h.UrlHinh" alt="Ảnh tour" />
+                                </div>
 
-                                <!-- Chọn làm ảnh đại diện -->
-                                <label class="d-block mt-1">
+                                <label class="thumbnail-radio">
                                     <input type="radio"
                                         name="Thumbnail"
                                         value="@h.UrlHinh"
@@ -145,18 +130,15 @@
                         }
                     </div>
                 </div>
-
             </div>
 
             <div class="mt-4 text-end">
                 <a asp-action="QuanLyTour" class="btn btn-secondary">Quay lại</a>
-                <button type="submit" class="btn btn-primary px-4">
-                    💾 Lưu tour
-                </button>
+                <button type="submit" class="btn btn-primary px-4">💾 Lưu tour</button>
             </div>
         </div>
     </form>
 </div>
-    <script src="~/js/upload-anh-tour.js"></script>
-    <script src="~/js/tinh-gia-tour.js"></script>
-    <link rel="stylesheet" href="~/css/upload-tour.css" />
+
+<script src="~/js/upload-anh-tour.js"></script>
+<script src="~/js/tinh-gia-tour.js"></script>
