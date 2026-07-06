@@ -14,7 +14,7 @@
                             {
                                 foreach (var hinh in Model.HinhTours.OrderBy(x => x.ThuTu))
                                 {
-                                    <img src="@Url.Content("~/img/tours/" + hinh.UrlHinh)"
+                                    <img src="@TourImagePathHelper.ToTourImageSrc(hinh.UrlHinh)"
                                         class="img-fluid rounded shadow mb-3"
                                         style="max-height:220px; object-fit:cover;"
                                         alt="@hinh.MoTa" />

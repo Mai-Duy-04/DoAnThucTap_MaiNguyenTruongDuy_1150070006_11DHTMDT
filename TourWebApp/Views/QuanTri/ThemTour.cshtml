@@ -4,6 +4,8 @@
     var loaiTours = ViewBag.LoaiTours as List<TourWebApp.Data.Models.LoaiTour> ?? new();
 }
 
+<link rel="stylesheet" href="~/css/upload-tour.css" />
+
 <div class="container-fluid">
     <h4 class="mb-3 fw-bold">➕ Thêm tour mới</h4>
 
@@ -17,7 +19,7 @@
         </div>
     }
 
-   <form asp-action="ThemTour" method="post">
+   <form asp-action="ThemTour" method="post" enctype="multipart/form-data">
     @Html.AntiForgeryToken()
 
         <div class="card shadow-sm p-4">
@@ -131,6 +133,14 @@
 
                 </div>
 
+                <div class="col-12 mt-3">
+                    <label class="form-label fw-semibold">Hình ảnh tour</label>
+                    <div id="drop-zone" class="drop-zone mb-3">
+                        <p class="text-muted mb-0">Kéo thả hoặc click để chọn nhiều ảnh</p>
+                        <input type="file" name="HinhAnhFiles" id="fileInput" multiple accept="image/*" hidden />
+                    </div>
+                </div>
+
             </div>
 
             <div class="mt-4 text-end">
@@ -145,4 +155,5 @@
 
     <script src="~/js/tinh-gia-tour.js"></script>
     <script src="~/js/gia-tour.js"></script>
+    <script src="~/js/upload-anh-tour.js"></script>
 

@@ -25,7 +25,7 @@
     else if (trangThai == "DaHuy" || trangThai == "HetHanThanhToan") { statusClass = "st-cancel"; }
 
     var tour = Model?.IdTourNavigation;
-    var anhTour = tour?.HinhAnh;
+    var anhTour = TourImagePathHelper.ToTourImageSrc(tour?.HinhAnh);
     var tenNguoiDat = Model?.IdTaiKhoanNavigation?.HoTen;
     var sdtNguoiDat = Model?.IdTaiKhoanNavigation?.SoDienThoai;
     var emailNguoiDat = Model?.IdTaiKhoanNavigation?.Email;

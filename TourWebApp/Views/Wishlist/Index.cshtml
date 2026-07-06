@@ -51,7 +51,7 @@
                 <div class="col-md-6 col-lg-4">
                     <article class="wishlist-card h-100">
                         <div class="wishlist-media-wrap">
-                            <img src="@Url.Content("~/img/tours/" + (tour?.HinhAnh ?? "hero1.jpg"))" class="wishlist-media" alt="@(tour?.TenTour ?? "Tour")" />
+                            <img src="@TourImagePathHelper.ToTourImageSrc(tour?.HinhAnh)" class="wishlist-media" alt="@(tour?.TenTour ?? "Tour")" />
                             <span class="wishlist-badge"><i class="fas fa-heart"></i> Đã lưu</span>
                         </div>
                         <div class="wishlist-body d-flex flex-column">

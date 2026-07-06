@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TourWebApp.Data.Models;
+using TourWebApp.Helpers;
 using TourWebApp.ViewModels;
 using TourWebApp.Models.ViewModels;
 using iText.Kernel.Pdf;
@@ -321,7 +322,7 @@ namespace TourWebApp.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [ActionName("ThemTour")]
-        public IActionResult ThemTour(Tour model, IFormFile? HinhAnhFile)
+        public IActionResult ThemTour(Tour model, IFormFile? HinhAnhFile, List<IFormFile>? HinhAnhFiles)
         {
             if (!LaAdmin()) return NeuKhongPhaiAdmin();
 
@@ -355,19 +356,39 @@ namespace TourWebApp.Controllers
                 model.GiaKhuyenMai = model.GiaGoc - (model.GiaGoc * model.PhanTramGiam / 100);
 
            
-            string? uploadedImagePath = null;
+            var uploadedImagePaths = new List<string>();
+            var uploadFiles = new List<IFormFile>();
+
             if (HinhAnhFile != null && HinhAnhFile.Length > 0)
+                uploadFiles.Add(HinhAnhFile);
+
+            if (HinhAnhFiles != null && HinhAnhFiles.Count > 0)
+                uploadFiles.AddRange(HinhAnhFiles.Where(x => x.Length > 0));
+
+            var uploadDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "img", "tours");
+            Directory.CreateDirectory(uploadDirectory);
+
+            var thuTu = 1;
+            foreach (var imageFile in uploadFiles)
             {
-                string fileName = Guid.NewGuid() + Path.GetExtension(HinhAnhFile.FileName);
-                string path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/img/tours", fileName);
+                string fileName = Guid.NewGuid() + Path.GetExtension(imageFile.FileName);
+                string path = Path.Combine(uploadDirectory, fileName);
 
                 using (var stream = new FileStream(path, FileMode.Create))
                 {
-                    HinhAnhFile.CopyTo(stream);
+                    imageFile.CopyTo(stream);
                 }
 
-                model.HinhAnh = fileName;
-                uploadedImagePath = path;
+                uploadedImagePaths.Add(path);
+
+                if (string.IsNullOrWhiteSpace(model.HinhAnh))
+                    model.HinhAnh = fileName;
+
+                model.HinhTours.Add(new HinhTour
+                {
+                    UrlHinh = fileName,
+                    ThuTu = thuTu++
+                });
             }
 
             decimal giaNguoiLon = model.GiaKhuyenMai ?? 0;
@@ -400,7 +421,7 @@ namespace TourWebApp.Controllers
             }
             catch (DbUpdateException)
             {
-                if (!string.IsNullOrWhiteSpace(uploadedImagePath) && System.IO.File.Exists(uploadedImagePath))
+                foreach (var uploadedImagePath in uploadedImagePaths.Where(System.IO.File.Exists))
                 {
                     System.IO.File.Delete(uploadedImagePath);
                 }
@@ -467,6 +488,7 @@ namespace TourWebApp.Controllers
         public IActionResult SuaTour(
             Tour model,
             List<IFormFile> HinhAnhFiles,
+            List<int>? XoaHinhIds,
             decimal? GiaNguoiLon,
             decimal? GiaTreEm,
             decimal? GiaEmBe)
@@ -514,13 +536,44 @@ namespace TourWebApp.Controllers
                 tour.GiaKhuyenMai = model.GiaGoc - (model.GiaGoc * model.PhanTramGiam / 100);
 
             
+            var existingImages = _context.HinhTours
+                .Where(x => x.IdTour == tour.IdTour)
+                .OrderBy(x => x.ThuTu)
+                .ThenBy(x => x.IdHinh)
+                .ToList();
+
+            foreach (var image in existingImages)
+            {
+                image.UrlHinh = TourImagePathHelper.NormalizeTourImagePath(image.UrlHinh);
+            }
+
+            var xoaHinhIdSet = (XoaHinhIds ?? new List<int>()).ToHashSet();
+            var imagesToRemove = existingImages
+                .Where(x => xoaHinhIdSet.Contains(x.IdHinh))
+                .ToList();
+
+            if (imagesToRemove.Any())
+            {
+                _context.HinhTours.RemoveRange(imagesToRemove);
+            }
+
+            var uploadDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "img", "tours");
+            Directory.CreateDirectory(uploadDirectory);
+
             var uploadedImagePaths = new List<string>();
+            var newImageNames = new List<string>();
+            var nextOrder = existingImages
+                .Where(x => !xoaHinhIdSet.Contains(x.IdHinh))
+                .Select(x => x.ThuTu ?? 0)
+                .DefaultIfEmpty(0)
+                .Max() + 1;
+
             if (HinhAnhFiles != null && HinhAnhFiles.Count > 0)
             {
-                foreach (var file in HinhAnhFiles)
+                foreach (var file in HinhAnhFiles.Where(x => x.Length > 0))
                 {
                     var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
-                    var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/img/tours", fileName);
+                    var path = Path.Combine(uploadDirectory, fileName);
 
                     using (var stream = new FileStream(path, FileMode.Create))
                     {
@@ -528,21 +581,33 @@ namespace TourWebApp.Controllers
                     }
 
                     uploadedImagePaths.Add(path);
+                    newImageNames.Add(fileName);
 
                     _context.HinhTours.Add(new HinhTour
                     {
                         IdTour = tour.IdTour,
                         UrlHinh = fileName,
-                        ThuTu = 0
+                        ThuTu = nextOrder++
                     });
                 }
             }
 
-            var thumbnail = Request.Form["Thumbnail"];
-            if (!string.IsNullOrEmpty(thumbnail))
-            {
+            var remainingImages = existingImages
+                .Where(x => !xoaHinhIdSet.Contains(x.IdHinh))
+                .Select(x => TourImagePathHelper.NormalizeTourImagePath(x.UrlHinh))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Concat(newImageNames)
+                .ToList();
+
+            var thumbnail = TourImagePathHelper.NormalizeTourImagePath(Request.Form["Thumbnail"].ToString());
+            var currentThumbnail = TourImagePathHelper.NormalizeTourImagePath(tour.HinhAnh);
+
+            if (!string.IsNullOrWhiteSpace(thumbnail) && remainingImages.Contains(thumbnail))
                 tour.HinhAnh = thumbnail;
-            }
+            else if (!string.IsNullOrWhiteSpace(currentThumbnail) && remainingImages.Contains(currentThumbnail))
+                tour.HinhAnh = currentThumbnail;
+            else
+                tour.HinhAnh = remainingImages.FirstOrDefault();
           
             var giaNguoiLon = GiaNguoiLon.GetValueOrDefault();
             var giaTreEm = GiaTreEm.GetValueOrDefault();
@@ -587,6 +652,8 @@ namespace TourWebApp.Controllers
                 _context.TourGiaChiTiets.AddRange(newPriceList);
                 _context.SaveChanges();
                 transaction.Commit();
+
+                DeleteUnsharedTourImages(imagesToRemove.Select(x => x.UrlHinh));
             }
             catch (DbUpdateException)
             {
@@ -614,6 +681,42 @@ namespace TourWebApp.Controllers
             return RedirectToAction("QuanLyTour");
         }
 
+
+        private void DeleteUnsharedTourImages(IEnumerable<string> imagePaths)
+        {
+            foreach (var imagePath in imagePaths)
+            {
+                var normalizedPath = TourImagePathHelper.NormalizeTourImagePath(imagePath);
+                if (string.IsNullOrWhiteSpace(normalizedPath))
+                    continue;
+
+                var fileNameOnly = Path.GetFileNameWithoutExtension(normalizedPath);
+                if (!Guid.TryParse(fileNameOnly, out _))
+                    continue;
+
+                var isStillUsed = _context.HinhTours
+                    .AsEnumerable()
+                    .Any(x => TourImagePathHelper.NormalizeTourImagePath(x.UrlHinh)
+                        .Equals(normalizedPath, StringComparison.OrdinalIgnoreCase))
+                    || _context.Tours
+                        .AsEnumerable()
+                        .Any(x => TourImagePathHelper.NormalizeTourImagePath(x.HinhAnh)
+                            .Equals(normalizedPath, StringComparison.OrdinalIgnoreCase));
+
+                if (isStillUsed)
+                    continue;
+
+                var physicalPath = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot",
+                    "img",
+                    "tours",
+                    normalizedPath.Replace('/', Path.DirectorySeparatorChar));
+
+                if (System.IO.File.Exists(physicalPath))
+                    System.IO.File.Delete(physicalPath);
+            }
+        }
 
       // NGƯNG BÁN
         [HttpPost]

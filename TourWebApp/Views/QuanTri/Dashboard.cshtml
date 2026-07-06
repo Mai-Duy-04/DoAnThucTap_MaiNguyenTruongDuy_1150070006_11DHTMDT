@@ -212,21 +212,7 @@
                             .OrderBy(h => h.ThuTu ?? 999)
                             .FirstOrDefault();
 
-                        var img = "/images/default-tour.jpg";
-
-                        if (firstImage != null)
-                        {
-                            img = firstImage.UrlHinh.Trim();
-
-                            if (img.StartsWith("~/"))
-                            {
-                                img = img.Replace("~", "");
-                            }
-                            else if (!img.StartsWith("/") && !img.StartsWith("http"))
-                            {
-                                img = "/img/tours/hinhtour/" + img;
-                            }
-                        }
+                        var img = TourImagePathHelper.ToTourImageSrc(firstImage?.UrlHinh ?? t.HinhAnh);
 
                         var doanhThuUocTinh = (t.GiaKhuyenMai ?? t.GiaGoc ?? 0) * t.SoNguoiDaDat;
 

@@ -12,6 +12,7 @@
 
     <form asp-action="SuaTour" method="post" enctype="multipart/form-data">
         <input type="hidden" asp-for="IdTour" />
+        <input type="hidden" asp-for="TrangThai" />
 
         <div class="card shadow-sm p-4">
             <div class="row g-3">
@@ -111,19 +112,33 @@
                     </div>
 
                     <h6 class="fw-bold mb-2">Ảnh hiện tại</h6>
+                    <p class="text-muted small text-end mb-2">Bấm X để xóa ảnh khi lưu</p>
                     <div class="preview-grid">
                         @foreach (var h in Model.HinhTours)
                         {
+                            var imagePath = TourImagePathHelper.NormalizeTourImagePath(h.UrlHinh);
+                            var isThumbnail = TourImagePathHelper.NormalizeTourImagePath(Model.HinhAnh) == imagePath;
                             <div class="preview-item">
+                                <button type="button"
+                                        class="remove-current-image"
+                                        title="Xóa ảnh"
+                                        aria-label="Xóa ảnh">
+                                    &times;
+                                </button>
+                                <input type="checkbox"
+                                       name="XoaHinhIds"
+                                       value="@h.IdHinh"
+                                       class="delete-image-checkbox"
+                                       hidden />
                                 <div class="preview-image">
-                                    <img src="~/img/tours/@h.UrlHinh" alt="Ảnh tour" />
+                                    <img src="@TourImagePathHelper.ToTourImageSrc(h.UrlHinh)" alt="Ảnh tour" />
                                 </div>
 
                                 <label class="thumbnail-radio">
                                     <input type="radio"
                                         name="Thumbnail"
-                                        value="@h.UrlHinh"
-                                        @(Model.HinhAnh == h.UrlHinh ? "checked" : "") />
+                                        value="@imagePath"
+                                        @(isThumbnail ? "checked" : "") />
                                     Ảnh đại diện
                                 </label>
                             </div>
@@ -142,3 +157,19 @@
 
 <script src="~/js/upload-anh-tour.js"></script>
 <script src="~/js/tinh-gia-tour.js"></script>
+<script>
+    document.querySelectorAll(".remove-current-image").forEach(button => {
+        button.addEventListener("click", () => {
+            const item = button.closest(".preview-item");
+            const checkbox = item.querySelector(".delete-image-checkbox");
+            const radio = item.querySelector("input[type='radio']");
+
+            checkbox.checked = !checkbox.checked;
+            item.classList.toggle("is-marked-delete", checkbox.checked);
+
+            if (checkbox.checked && radio?.checked) {
+                radio.checked = false;
+            }
+        });
+    });
+</script>

@@ -11,31 +11,7 @@
     var tenTour = Model.IdTourNavigation?.TenTour ?? "Tour đang cập nhật";
     var diaDiem = Model.IdTourNavigation?.DiaDiem ?? "Đang cập nhật";
     var ngayKhoiHanh = Model.IdLichNavigation?.NgayKhoiHanh;
-    var anhTourSrc = string.Empty;
-    if (!string.IsNullOrWhiteSpace(anhTour))
-    {
-        if (anhTour.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-        {
-            anhTourSrc = anhTour;
-        }
-        else
-        {
-            var cleaned = anhTour.Trim();
-            if (cleaned.StartsWith("~/", StringComparison.Ordinal) || cleaned.StartsWith("/", StringComparison.Ordinal))
-            {
-                anhTourSrc = Url.Content(cleaned.StartsWith("~/", StringComparison.Ordinal) ? cleaned : "~" + cleaned);
-            }
-            else if (cleaned.Contains('/'))
-            {
-                anhTourSrc = Url.Content("~/" + cleaned.TrimStart('/'));
-            }
-            else
-            {
-                // Keep the same image convention as Tour/ChiTiet: ~/img/tours/{fileName}
-                anhTourSrc = Url.Content("~/img/tours/" + cleaned);
-            }
-        }
-    }
+    var anhTourSrc = TourImagePathHelper.ToTourImageSrc(anhTour);
 }
 
 <style>

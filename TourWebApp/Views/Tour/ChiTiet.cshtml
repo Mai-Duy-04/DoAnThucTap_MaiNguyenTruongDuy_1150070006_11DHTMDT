@@ -41,11 +41,20 @@
 
     var hinhList = (Model.HinhTours ?? new List<HinhTour>())
         .OrderBy(h => h.ThuTu)
-        .Select(h => h.UrlHinh)
+        .Select(h => TourImagePathHelper.NormalizeTourImagePath(h.UrlHinh))
         .Where(url => !string.IsNullOrWhiteSpace(url))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
         .ToList();
 
-    var hinhChinh = hinhList.FirstOrDefault() ?? Model.HinhAnh ?? "hero1.jpg";
+    var hinhDaiDien = TourImagePathHelper.NormalizeTourImagePath(Model.HinhAnh);
+    var hinhChinh = !string.IsNullOrWhiteSpace(hinhDaiDien)
+        ? hinhDaiDien
+        : hinhList.FirstOrDefault() ?? "vungtau.jpg";
+
+    if (!hinhList.Contains(hinhChinh, StringComparer.OrdinalIgnoreCase))
+    {
+        hinhList.Insert(0, hinhChinh);
+    }
 
     var lichMacDinh = lichList.FirstOrDefault();
     var soNgayTour = ExtractSoNgay(Model.ThoiGian ?? string.Empty);
@@ -70,7 +79,7 @@
 <link rel="stylesheet" href="~/css/tour-detail.css" asp-append-version="true" />
 
 <main class="tour-detail-page">
-    <section class="tour-detail-hero" style="background-image:url('@Url.Content("~/img/tours/" + hinhChinh)')">
+    <section class="tour-detail-hero" style="background-image:url('@TourImagePathHelper.ToTourImageSrc(hinhChinh)')">
         <div class="tour-detail-hero-overlay"></div>
         <div class="container tour-detail-container tour-detail-hero-content">
             <nav class="tour-detail-breadcrumb" aria-label="breadcrumb">
@@ -113,7 +122,7 @@
             <div class="tour-detail-gallery-card">
                 <div class="tour-detail-main-image-wrap">
                     <img id="main-img"
-                         src="@Url.Content("~/img/tours/" + hinhChinh)"
+                         src="@TourImagePathHelper.ToTourImageSrc(hinhChinh)"
                          class="tour-main-img"
                          alt="@Model.TenTour" />
                 </div>
@@ -127,7 +136,7 @@
                             <button type="button"
                                     class="tour-detail-thumb-btn"
                                     aria-label="Ảnh tour @(thumbIndex + 1)">
-                                <img src="@Url.Content("~/img/tours/" + hinh)"
+                                <img src="@TourImagePathHelper.ToTourImageSrc(hinh)"
                                      class="tour-thumb thumb-img @(thumbIndex == 0 ? "is-active" : "")"
                                      onclick="changeMainImage(this.src)"
                                      alt="@Model.TenTour - ảnh @(thumbIndex + 1)" />
@@ -138,7 +147,7 @@
                     else
                     {
                         <button type="button" class="tour-detail-thumb-btn" aria-label="Ảnh tour mặc định">
-                            <img src="@Url.Content("~/img/tours/" + hinhChinh)"
+                            <img src="@TourImagePathHelper.ToTourImageSrc(hinhChinh)"
                                  class="tour-thumb thumb-img is-active"
                                  onclick="changeMainImage(this.src)"
                                  alt="@Model.TenTour" />
@@ -651,7 +660,7 @@
                         <div class="col-xl-4 col-md-6">
                             <article class="tour-detail-related-card">
                                 <div class="tour-detail-related-media">
-                                    <img src="~/img/tours/@t.HinhAnh" alt="@t.TenTour" class="related-img" />
+                                    <img src="@TourImagePathHelper.ToTourImageSrc(t.HinhAnh)" alt="@t.TenTour" class="related-img" />
                                     @if (lichGanNhat != null)
                                     {
                                         <span class="tour-detail-related-badge">@lichGanNhat.NgayKhoiHanh.ToString("dd/MM/yyyy")</span>

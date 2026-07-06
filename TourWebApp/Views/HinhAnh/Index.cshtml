@@ -15,7 +15,7 @@
     <div class="col-md-4">
         <div class="gallery-item">
 
-            <img src="@Url.Content("~/img/tours/" + h.UrlHinh)"
+            <img src="@TourImagePathHelper.ToTourImageSrc(h.UrlHinh)"
                  class="img-fluid rounded gallery-img"
                  onclick="openImage(this.src)"
                  style="cursor:pointer;" />
